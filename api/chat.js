@@ -9,55 +9,80 @@ export default async function handler(req, res) {
     const DAFTAR_KUNCI = ["romash1ai", "romash9ai", "romash0ai", "Romash5ai", "romash8ai"];
 
     if (!key || !DAFTAR_KUNCI.includes(key)) {
-        return res.status(401).json({ status: "error", message: "API Key romashAI tidak valid!" });
+        return res.status(401).json({ status: "error", message: "API Key tidak valid!" });
     }
 
-    const systemPrompt = "Kamu adalah Romash AI Flash buatan @maramadhona. Kamu pintar, sangat cepat, dan handal.";
+    const sys = "Kamu adalah Romash AI Flash buatan @maramadhona. Jawab dengan sangat pintar dan cepat.";
 
-    // --- JALUR 1: GEMINI (UTAMA - PALING PINTAR) ---
+    // --- URUTAN 8 LAPIS PERTAHANAN ---
+    
+    // 1. GEMINI (Terpintar)
     try {
-        const res1 = await fetch(`https://api.vreden.my.id/api/gemini?query=${encodeURIComponent(ask)}&system=${encodeURIComponent(systemPrompt)}`);
-        const data1 = await res1.json();
-        // Cek jika result ada dan bukan pesan error
-        if (data1.result && !data1.result.includes("error")) {
-            return kirimRespon(res, data1.result, "Flash-Gemini");
-        }
+        const r1 = await fetch(`https://api.vreden.my.id/api/gemini?query=${encodeURIComponent(ask)}&system=${encodeURIComponent(sys)}`);
+        const d1 = await r1.json();
+        if (d1.result) return send(res, d1.result, "Flash-Gemini");
     } catch (e) {}
 
-    // --- JALUR 2: PERPLEXITY (CADANGAN 1 - REALTIME) ---
+    // 2. PERPLEXITY (Real-time Search)
     try {
-        const res2 = await fetch(`https://api.vreden.my.id/api/perplexity?query=${encodeURIComponent(ask)}`);
-        const data2 = await res2.json();
-        if (data2.result) return kirimRespon(res, data2.result, "Flash-Perplexity");
+        const r2 = await fetch(`https://api.vreden.my.id/api/perplexity?query=${encodeURIComponent(ask)}`);
+        const d2 = await r2.json();
+        if (d2.result) return send(res, d2.result, "Flash-Perplexity");
     } catch (e) {}
 
-    // --- JALUR 3: BLACKBOX (CADANGAN 2 - STABIL) ---
+    // 3. BLACKBOX (Coding & Logic)
     try {
-        const res3 = await fetch(`https://api.vreden.my.id/api/blackbox?query=${encodeURIComponent(ask)}&system=${encodeURIComponent(systemPrompt)}`);
-        const data3 = await res3.json();
-        if (data3.result) return kirimRespon(res, data3.result, "Flash-V3");
+        const r3 = await fetch(`https://api.vreden.my.id/api/blackbox?query=${encodeURIComponent(ask)}&system=${encodeURIComponent(sys)}`);
+        const d3 = await r3.json();
+        if (d3.result) return send(res, d3.result, "Flash-Blackbox");
     } catch (e) {}
 
-    // --- JALUR 4: POLLINATIONS (DARURAT - BENTENG TERAKHIR) ---
+    // 4. LLAMA-3 (Speed Monster)
     try {
-        const res4 = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=${encodeURIComponent(systemPrompt)}`);
-        const data4 = await res4.text();
-        if (data4 && !data4.includes("Queue full")) {
-            return kirimRespon(res, data4, "Flash-Emergency");
-        }
+        const r4 = await fetch(`https://api.vreden.my.id/api/llama3?query=${encodeURIComponent(sys + " User: " + ask)}`);
+        const d4 = await r4.json();
+        if (d4.result) return send(res, d4.result, "Flash-Llama3");
     } catch (e) {}
 
-    // JIKA SEMUA JALUR GAGAL
+    // 5. GPT-4 (Creative)
+    try {
+        const r5 = await fetch(`https://api.vreden.my.id/api/gpt4?query=${encodeURIComponent(ask)}`);
+        const d5 = await r5.json();
+        if (d5.result) return send(res, d5.result, "Flash-GPT4");
+    } catch (e) {}
+
+    // 6. MISTRAL (Efficient)
+    try {
+        const r6 = await fetch(`https://api.vreden.my.id/api/mistral?query=${encodeURIComponent(ask)}`);
+        const d6 = await r6.json();
+        if (d6.result) return send(res, d6.result, "Flash-Mistral");
+    } catch (e) {}
+
+    // 7. DEEPSEEK (Analytical)
+    try {
+        const r7 = await fetch(`https://api.vreden.my.id/api/deepseek?query=${encodeURIComponent(ask)}`);
+        const d7 = await r7.json();
+        if (d7.result) return send(res, d7.result, "Flash-DeepSeek");
+    } catch (e) {}
+
+    // 8. CLAUDE-SONNET (The Final Guard)
+    try {
+        const r8 = await fetch(`https://api.vreden.my.id/api/claude?query=${encodeURIComponent(ask)}`);
+        const d8 = await r8.json();
+        if (d8.result) return send(res, d8.result, "Flash-Claude");
+    } catch (e) {}
+
+    // --- FALLBACK JIKA SEMUA MATI ---
     res.status(200).json({ 
         status: "success", 
-        reply: "Halo! Saya Romash AI Flash buatan @maramadhona. Saat ini semua jalur sedang sangat padat, silakan coba kirim pesan lagi ya!" 
+        reply: "Halo! Saya Romash AI Flash buatan @maramadhona. Saat ini semua jalur (8 Lapis) sedang mengalami lonjakan trafik yang ekstrem. Mohon coba lagi sesaat lagi!" 
     });
 }
 
-function kirimRespon(res, teks, model) {
+function send(res, teks, model) {
     res.status(200).json({
         status: "success",
-        model: "Romash AI " + model,
+        model: "romashAI " + model,
         creator: "@maramadhona",
         reply: teks
     });
