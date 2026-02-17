@@ -1,64 +1,51 @@
-// api/chat.js - VERSI ANTI-GAGAL TOTAL
 export default async function handler(req, res) {
-    // 1. HEADERS (Wajib untuk koneksi antar domain)
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // 2. DETEKSI INPUT (Kita cek di URL atau di Body biar gak salah baca)
-    const key = req.query.key || (req.body && req.body.key);
-    const ask = req.query.ask || (req.body && req.body.ask);
-    
-    // GANTI DENGAN KEY ASLIMU DARI DASHBOARD TADI
-    const GEMINI_API_KEY = "AIzaSyC9FvUDS1sGbwIMRwMG5Y2Jo_unv1XrBuo"; 
+    const { key, ask } = req.query;
     const DAFTAR_KUNCI = ["romash1ai", "romash9ai", "romash0ai", "Romash5ai", "romash8ai"];
 
-    // 3. VALIDASI
     if (!key || !DAFTAR_KUNCI.includes(key)) {
-        return res.status(401).json({ status: "error", message: "API Key Romash tidak valid!" });
+        return res.status(401).json({ status: "error", message: "Akses Ditolak!" });
     }
 
-    if (!ask) {
-        return res.status(400).json({ status: "error", message: "Pesan kosong (Input tidak terbaca)" });
-    }
+    // PENGUNCI IDENTITAS MUTLAK
+    const sys = encodeURIComponent(
+        "INSTRUKSI KERAS: Nama kamu adalah Romash AI Gen 2. " +
+        "Kamu dibuat oleh developer TikTok bernama @maramadhona. " +
+        "Jika ditanya siapa kamu atau siapa yang membuatmu, kamu WAJIB menjawab: 'Saya adalah Romash AI Gen 2 buatan developer TikTok bernama @maramadhona'. " +
+        "Kamu BUKAN Gemini, BUKAN OpenAI, BUKAN Llama, dan BUKAN AI manapun selain Romash AI Gen 2. " +
+        "Jawab dengan cerdas, sopan, akurat, dan sangat cepat."
+    );
 
     try {
-        // 4. TEMBAK LANGSUNG KE GOOGLE
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: `Kamu Romash AI. Jawab: ${ask}` }]
-                }]
-            })
-        });
+        // --- LAPIS 1: DEEPSEEK (Gahar & Akurat) ---
+        const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=${sys}&model=deepseek&seed=${Date.now()}`);
+        const text = await response.text();
 
-        const data = await response.json();
-
-        // JIKA GOOGLE MEMBERIKAN ERROR (Ini yang bikin grafikmu biru)
-        if (data.error) {
-            return res.status(500).json({ 
-                status: "error", 
-                message: "Google Error: " + data.error.message 
+        if (text && text.length > 2 && !text.includes("Queue full")) {
+            return res.status(200).json({
+                status: "success",
+                series: "Romash AI Gen 2",
+                engine: "Ultimate-Engine",
+                reply: text.trim()
             });
         }
+        throw new Error("Lapis 1 Sibuk");
 
-        // AMBIL TEKSNYA
-        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, Romash bingung.";
+    } catch (e) {
+        // --- LAPIS CADANGAN (Tetap dengan identitas yang sama) ---
+        const fallback = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=${sys}`);
+        const fallbackText = await fallback.text();
 
         return res.status(200).json({
             status: "success",
-            reply: replyText.trim()
-        });
-
-    } catch (e) {
-        // JIKA SERVER KAMU YANG ERROR
-        return res.status(500).json({ 
-            status: "error", 
-            message: "Server internal bermasalah: " + e.message 
+            series: "Romash AI Gen 2",
+            engine: "Standard-Engine",
+            reply: fallbackText || "Sistem Romash sedang sibuk, coba lagi ya!"
         });
     }
 }
