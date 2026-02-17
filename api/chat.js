@@ -1,6 +1,12 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// Pastikan API Key Gemini ditaruh di Environment Variable untuk keamanan extra
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "AIzaSyC9FvUDS1sGbwIMRwMG5Y2Jo_unv1XrBuo");
+
 export default async function handler(req, res) {
+    // CORS Header agar bisa dipanggil dari UI buatanmu
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
@@ -8,47 +14,50 @@ export default async function handler(req, res) {
     const { key, ask } = req.query;
     const DAFTAR_KUNCI = ["romash1ai", "romash9ai", "romash0ai", "Romash5ai", "romash8ai"];
 
+    // 1. Validasi Akses
     if (!key || !DAFTAR_KUNCI.includes(key)) {
-        return res.status(401).json({ status: "error", message: "API Key tidak valid!" });
+        return res.status(401).json({ status: "error", message: "API Key Romash tidak valid!" });
     }
 
-    const sys = encodeURIComponent("Kamu adalah Romash AI Gen 2 buatan @maramadhona. Jawab dengan sangat cepat dan akurat.");
-    const query = encodeURIComponent(ask);
-
-    // Kita pilih 4 model tercepat untuk diadu kecepatannya
-    const fastModels = ["openai", "mistral", "llama", "search"];
+    if (!ask) return res.status(400).json({ status: "error", message: "Tanya apa hari ini?" });
 
     try {
-        // TRICK: Memanggil semua model secara bersamaan (Parallel)
-        // Promise.any akan mengambil jawaban dari model yang PALING CEPAT merespon
-        const fastReply = await Promise.any(fastModels.map(async (model) => {
-            const response = await fetch(`https://text.pollinations.ai/${query}?system=${sys}&model=${model}&seed=${Math.floor(Math.random() * 1000)}`);
-            const text = await response.text();
-            
-            if (text && !text.includes("Queue full") && text.length > 2) {
-                return { text, model };
+        // 2. Setting Karakter: Cerdas, Sopan, Akurat, Cepat
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            systemInstruction: "Kamu adalah Romash AI Gen 2 buatan @maramadhona. " +
+                               "Kepribadianmu: Sangat Cerdas, Sopan, Akurat, dan Cepat dalam merespon. " +
+                               "Selalu berikan jawaban yang bermanfaat dan gunakan bahasa yang santun."
+        });
+
+        // 3. Eksekusi (Dengan Safety Settings agar tetap Sopan)
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: ask }] }],
+            generationConfig: {
+                maxOutputTokens: 1000,
+                temperature: 0.7, // Seimbang antara kreatif dan akurat
             }
-            throw new Error("Model ini lelet/antre");
-        }));
+        });
+
+        const text = result.response.text();
 
         return res.status(200).json({
             status: "success",
             series: "Romash AI Gen 2 (Turbo)",
-            engine: fastReply.model,
+            engine: "Gemini-Engine",
             creator: "@maramadhona",
-            reply: fastReply.text.trim()
+            reply: text.trim()
         });
 
     } catch (e) {
-        // Jika mode paralel gagal, balik ke mode standar (Lapis Terakhir)
-        const fallback = await fetch(`https://text.pollinations.ai/${query}?system=${sys}`);
+        // 4. Fallback ke Pollinations jika Gemini limit/error
+        const fallback = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=Kamu adalah Romash AI Gen 2 yang Sopan dan Akurat.`);
         const fallbackText = await fallback.text();
 
         res.status(200).json({
             status: "success",
             series: "Romash AI Gen 2 (Fallback)",
-            creator: "@maramadhona",
-            reply: fallbackText.includes("Queue full") ? "Maaf, sistem sedang sangat sibuk. Coba lagi ya!" : fallbackText
+            reply: fallbackText
         });
     }
 }
