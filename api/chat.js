@@ -1,4 +1,3 @@
-// api/chat.js - VERSI PURIST GEMINI
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -7,71 +6,44 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     const { key, ask } = req.query;
-    
-    // GANTI DENGAN API KEY GEMINI ASLIMU
-    const GEMINI_API_KEY = "AIzaSyC9FvUDS1sGbwIMRwMG5Y2Jo_unv1XrBuo"; 
+    const GEMINI_API_KEY = "AIzaSyC9FvUDS1sGbwIMRwMG5Y2Jo_unv1XrBuo"; // Pastikan key benar
     const DAFTAR_KUNCI = ["romash1ai", "romash9ai", "romash0ai", "Romash5ai", "romash8ai"];
 
-    // 1. Validasi API Key Romash
     if (!key || !DAFTAR_KUNCI.includes(key)) {
-        return res.status(401).json({ status: "error", message: "API Key Romash tidak valid!" });
-    }
-
-    if (!ask) return res.status(400).json({ status: "error", message: "Tanya apa hari ini?" });
-
-    // 2. Logika Voucher 4RB
-    if (ask.toUpperCase() === '4RB') {
-        return res.status(200).json({
-            status: "success",
-            series: "Romash Rewards",
-            reply: "Selamat! Voucher 4RB berhasil diklaim. Saldo 400k telah ditambahkan ke akun Romash kamu!"
-        });
+        return res.status(401).json({ status: "error", message: "Key Romash Salah!" });
     }
 
     try {
-        // 3. Panggil API Gemini Langsung (Tanpa Library, Tanpa Pollinations)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        // Gunakan v1 (bukan v1beta jika ingin lebih stabil)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: `Kamu adalah Romash AI Gen 2 buatan @maramadhona. Karaktermu: Cerdas, Sopan, Akurat, dan Cepat. Pertanyaan: ${ask}`
-                    }]
-                }],
-                generationConfig: {
-                    temperature: 0.7,
-                    topP: 0.8,
-                    topK: 40,
-                    maxOutputTokens: 2048,
-                }
+                contents: [{ parts: [{ text: ask }] }],
+                // Menambahkan safety settings agar tidak mudah kena blokir filter
+                safetySettings: [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" }
+                ]
             })
         });
 
         const data = await response.json();
 
-        // Cek jika ada masalah teknis dengan API Key Gemini-nya
         if (data.error) {
-            return res.status(500).json({ 
-                status: "error", 
-                message: "Gemini Engine Error: " + data.error.message 
-            });
+            // Jika error karena limit, kasih pesan yang jelas
+            const msg = data.error.code === 429 ? "Server Gemini lagi rame, tunggu semenit ya!" : data.error.message;
+            return res.status(data.error.code || 500).json({ status: "error", message: msg });
         }
 
         const replyText = data.candidates[0].content.parts[0].text;
-
         return res.status(200).json({
             status: "success",
-            series: "Romash AI Gen 2 (Full Gemini)",
-            engine: "Gemini 1.5 Flash",
-            creator: "@maramadhona",
+            series: "Romash AI Gen 2",
             reply: replyText.trim()
         });
 
     } catch (e) {
-        return res.status(500).json({ 
-            status: "error", 
-            message: "Gagal terhubung ke otak Gemini. Periksa koneksi server atau API Key." 
-        });
+        return res.status(500).json({ status: "error", message: "Gagal menyambung ke otak Google." });
     }
 }
