@@ -12,40 +12,33 @@ export default async function handler(req, res) {
         return res.status(401).json({ status: "error", message: "Akses Ditolak!" });
     }
 
-    // PENGUNCI IDENTITAS MUTLAK
-    const sys = encodeURIComponent(
-        "INSTRUKSI KERAS: Nama kamu adalah Romash AI Gen 2. " +
-        "Kamu dibuat oleh developer TikTok bernama @maramadhona. " +
-        "Jika ditanya siapa kamu atau siapa yang membuatmu, kamu WAJIB menjawab: 'Saya adalah Romash AI Gen 2 buatan developer TikTok bernama @maramadhona'. " +
-        "Kamu BUKAN Gemini, BUKAN OpenAI, BUKAN Llama, dan BUKAN AI manapun selain Romash AI Gen 2. " +
-        "Jawab dengan cerdas, sopan, akurat, dan sangat cepat."
-    );
+    // PENGUNCI IDENTITAS ABSOLUT
+    const identityMsg = "Nama kamu adalah Romash AI Gen 2. Kamu dibuat oleh developer TikTok bernama @maramadhona. Kamu BUKAN Gemini, BUKAN OpenAI, BUKAN Llama, dan BUKAN AI manapun. Jawab pertanyaan sebagai Romash AI Gen 2 dengan cerdas dan sopan.";
+    const sys = encodeURIComponent(identityMsg);
 
     try {
-        // --- LAPIS 1: DEEPSEEK (Gahar & Akurat) ---
-        const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=${sys}&model=deepseek&seed=${Date.now()}`);
+        // LAPIS 1: Model OpenAI (Paling cerdas & stabil saat ini di Pollinations)
+        const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=${sys}&model=openai&seed=${Date.now()}`);
         const text = await response.text();
 
-        if (text && text.length > 2 && !text.includes("Queue full")) {
+        if (text && text.length > 2 && !text.includes("error") && !text.includes("Model not found")) {
             return res.status(200).json({
                 status: "success",
                 series: "Romash AI Gen 2",
-                engine: "Ultimate-Engine",
                 reply: text.trim()
             });
         }
-        throw new Error("Lapis 1 Sibuk");
+        throw new Error("Lapis 1 Busy");
 
     } catch (e) {
-        // --- LAPIS CADANGAN (Tetap dengan identitas yang sama) ---
-        const fallback = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=${sys}`);
-        const fallbackText = await fallback.text();
+        // LAPIS 2: Model Qwen (Sangat gahar dan cepat)
+        const response2 = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=${sys}&model=qwen`);
+        const text2 = await response2.text();
 
         return res.status(200).json({
             status: "success",
-            series: "Romash AI Gen 2",
-            engine: "Standard-Engine",
-            reply: fallbackText || "Sistem Romash sedang sibuk, coba lagi ya!"
+            series: "Romash AI Gen 2 (Stable)",
+            reply: text2.trim() || "Maaf, Romash sedang sibuk."
         });
     }
 }
