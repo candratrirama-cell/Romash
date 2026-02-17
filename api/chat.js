@@ -1,40 +1,74 @@
 export default async function handler(req, res) {
-    const { key, ask } = req.query;
-    if (key !== "romash1ai") return res.status(401).json({ error: "Key Salah" });
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    const lowerAsk = ask.toLowerCase();
-    
-    // Fitur Gambar: Hanya jalan kalau diminta (Hemat Resource)
-    if (lowerAsk.includes("gambar") || lowerAsk.includes("foto")) {
-        const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(ask)}?width=512&height=512&nologo=true`; // Resolusi 512 biar ringan di HP
-        return res.status(200).json({ type: "image", reply: "Ini gambarnya:", image_url: imgUrl });
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
+    const { key, ask } = req.query;
+    const DAFTAR_KUNCI = ["romash1ai", "romash9ai", "romash0ai", "Romash5ai", "romash8ai"];
+
+    if (!key || !DAFTAR_KUNCI.includes(key)) {
+        return res.status(401).json({ status: "error", message: "Key Romash AI Gen 2 Salah!" });
     }
 
+    const lowerAsk = ask.toLowerCase();
+    const isImageReq = /(gambar|foto|lukis|buatkan|bikin)/gi.test(lowerAsk);
+    
+    // --- FITUR GAMBAR (Otomatis & Ringan) ---
+    if (isImageReq) {
+        const cleanPrompt = ask.replace(/(bikinkan|buatkan|tampilkan|tolong|gambar|foto|lukis|kan|bikin|ai|romash)/gi, '').trim();
+        const finalPrompt = cleanPrompt || "pemandangan";
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=512&height=512&nologo=true&seed=${Math.floor(Math.random() * 99999)}`;
+        
+        return res.status(200).json({
+            status: "success",
+            series: "Romash AI Gen 2",
+            type: "image",
+            reply: `Ini gambar **${finalPrompt}** buat kamu:`,
+            image_url: imageUrl
+        });
+    }
+
+    // --- FITUR CHAT 3 JALUR BALAPAN (TANPA BATAS WAKTU) ---
+    const sys = encodeURIComponent("Kamu adalah Romash AI Gen 2 buatan @maramadhona. Jawab dengan cerdas dan cepat.");
+    const query = encodeURIComponent(ask);
+    
+    // 3 Model terbaik untuk diadu kecepatannya
+    const models = ["openai", "mistral", "search"];
+
     try {
-        // GANTI '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' dengan key dari console.groq.com
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer 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`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: "llama3-8b-8192", // Model ini sangat cepat dan ringan
-                messages: [
-                    { role: "system", content: "Kamu adalah Romash AI Gen 2 buatan @maramadhona. Jawab singkat dan padat." },
-                    { role: "user", content: ask }
-                ],
-                max_tokens: 500 // Membatasi agar respon tidak terlalu panjang & berat
-            })
+        // Balapan: Siapa yang paling cepat merespon, itu yang diambil
+        const winner = await Promise.any(models.map(async (model) => {
+            const seed = Math.floor(Math.random() * 100000);
+            const response = await fetch(`https://text.pollinations.ai/${query}?system=${sys}&model=${model}&seed=${seed}`);
+            
+            if (!response.ok) throw new Error("Gagal");
+            const text = await response.text();
+            
+            if (text && text.length > 2 && !text.includes("Queue full")) {
+                return { text, model };
+            }
+            throw new Error("Antre");
+        }));
+
+        return res.status(200).json({
+            status: "success",
+            series: "Romash AI Gen 2",
+            engine: winner.model,
+            creator: "@maramadhona",
+            reply: winner.text.trim()
         });
 
-        const data = await response.json();
+    } catch (e) {
+        // Fallback terakhir jika semua jalur benar-benar macet total
+        const finalTry = await fetch(`https://text.pollinations.ai/${query}?system=${sys}`);
+        const finalText = await finalTry.text();
+        
         res.status(200).json({
             status: "success",
-            series: "Romash AI Gen 2 (Flash)",
-            reply: data.choices[0].message.content
+            series: "Romash AI Gen 2 (Final)",
+            reply: finalText.includes("Queue full") ? "Maaf, semua jalur lagi penuh banget. Coba tanya lagi sebentar ya!" : finalText
         });
-    } catch (e) {
-        res.status(200).json({ reply: "Sistem sibuk, coba lagi ya!" });
     }
 }
