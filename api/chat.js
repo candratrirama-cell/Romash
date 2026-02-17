@@ -1,75 +1,35 @@
 export default async function handler(req, res) {
-    // 1. DAFTAR API KEY RESMI ROMASH AI
-    const DAFTAR_KEY = [
-        "romash1go0g1k",
-        "romash1A8k1hKs",
-        "romash9AxY137",
-        "romash6ahenmh9",
-        "romash6q9as10",
-        "romashforkenzie",
-        "romashai10",
-        "4RB",
-        "alza"
-    ];
+    // 1. Ambil data dari link (URL)
+    const { key, ask } = req.query;
 
-    // Cek jika metode bukan POST
-    if (req.method !== 'POST') {
-        return res.status(200).json({ 
-            success: false, 
-            message: "Sistem Aktif. Gunakan metode POST untuk mengirim pesan." 
-        });
+    // 2. Daftar Kunci Restoran (API Key) kamu
+    const DAFTAR_KUNCI = ["romash1ai", "romash9ai", "romash0ai", "Romash5ai", "romash8ai"];
+
+    // 3. Cek Kunci
+    if (!key || !DAFTAR_KUNCI.includes(key)) {
+        return res.status(401).json({ error: "API Key romashAI salah!" });
     }
 
-    const { message, apikey } = req.body;
-
-    // 2. SISTEM VALIDASI API KEY
-    if (!apikey || !DAFTAR_KEY.includes(apikey)) {
-        return res.status(401).json({ 
-            success: false, 
-            message: "apikey : invalid atau tidak terdaftar" 
-        });
-    }
-
-    if (!message) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "message : required" 
-        });
+    if (!ask) {
+        return res.status(400).json({ error: "Tanya apa? Isi parameter 'ask' ya." });
     }
 
     try {
-        // 3. MENGHUBUNGKAN KE KERNEL ROMASH AI
-        const response = await fetch('https://text.pollinations.ai/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                messages: [
-                    { 
-                        role: "system", 
-                        content: "Kamu adalah Romash AI 1.0. Dikembangkan oleh @maramadhona." 
-                    },
-                    { role: "user", content: message }
-                ],
-                model: "openai"
-            })
-        });
+        // 4. Identitas romashAI
+        const identitas = "Namamu adalah romashAI, asisten AI pintar.";
+        
+        // 5. Panggil AI pake 'fetch' (Bawaan JavaScript, Gak perlu instal apa-apa)
+        const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=${encodeURIComponent(identitas)}`);
+        const data = await response.text();
 
-        if (!response.ok) {
-            throw new Error('Gagal mengambil data dari Kernel');
-        }
-
-        const result = await response.text();
-
+        // 6. Kasih jawaban otomatis
         return res.status(200).json({
-            success: true,
-            developer: "@maramadhona",
-            answer: result
+            status: "success",
+            nama: "romashAI",
+            reply: data
         });
 
-    } catch (err) {
-        return res.status(500).json({ 
-            success: false, 
-            message: "Internal Server Error: " + err.message 
-        });
+    } catch (error) {
+        return res.status(500).json({ error: "Gagal nyambung ke server romashAI." });
     }
 }
