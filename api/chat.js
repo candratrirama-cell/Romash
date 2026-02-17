@@ -9,52 +9,44 @@ export default async function handler(req, res) {
     const DAFTAR_KUNCI = ["romash1ai", "romash9ai", "romash0ai", "Romash5ai", "romash8ai"];
 
     if (!key || !DAFTAR_KUNCI.includes(key)) {
-        return res.status(401).json({ status: "error", message: "API Key tidak valid!" });
+        return res.status(401).json({ status: "error", message: "API Key romashAI tidak valid!" });
     }
 
-    const sys = "Kamu adalah Romash AI Flash buatan @maramadhona. Jawab dengan sangat pintar dan cepat.";
+    const sys = "Kamu adalah Romash AI Flash buatan @maramadhona. Kamu asisten yang sangat pintar, berwawasan luas, dan selalu memberikan jawaban lengkap dalam bahasa Indonesia.";
 
     try {
-        // JALUR BARU: Menggunakan provider yang lebih tahan banting (Llama-3 via DuckDuckGo Proxy)
-        const response = await fetch(`https://api.pawan.krd/v1/chat/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer pk-free' },
-            body: JSON.stringify({
-                model: "gpt-3.5-turbo",
-                messages: [
-                    { role: "system", content: sys },
-                    { role: "user", content: ask }
-                ]
-            })
-        });
-
+        // JALUR 1: BLACKBOX REAL AI (Bukan Beo)
+        const response = await fetch(`https://api.vreden.my.id/api/blackbox?query=${encodeURIComponent(ask)}&system=${encodeURIComponent(sys)}`);
         const data = await response.json();
-        const replyText = data.choices[0].message.content;
-
-        return res.status(200).json({
-            status: "success",
-            model: "Romash AI Flash-V1",
-            creator: "@maramadhona",
-            reply: replyText
-        });
-
-    } catch (e) {
-        // CADANGAN TERAKHIR: Jalur Kencang Tanpa API Key
-        try {
-            const resBackup = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(ask)}`);
-            const dataBackup = await resBackup.json();
-            const simpleReply = "Saya Romash AI buatan @maramadhona. " + (dataBackup[0][0][0] || "Ada yang bisa saya bantu?");
-            
+        
+        if (data.result && data.result.length > 5) {
             return res.status(200).json({
                 status: "success",
-                model: "Romash AI Flash-V2",
+                model: "Romash AI Flash-V1",
                 creator: "@maramadhona",
-                reply: simpleReply
+                reply: data.result
             });
+        }
+        throw new Error("Jalur 1 Gagal");
+
+    } catch (e) {
+        try {
+            // JALUR 2: GPT-4 ALTERNATIF
+            const res2 = await fetch(`https://api.vreden.my.id/api/gpt4?query=${encodeURIComponent(ask + " (jawab sebagai Romash AI buatan @maramadhona)")}`);
+            const data2 = await res2.json();
+            
+            if (data2.result) {
+                return res.status(200).json({
+                    status: "success",
+                    model: "Romash AI Flash-V2",
+                    reply: data2.result
+                });
+            }
         } catch (err) {
+            // JIKA BENER-BENER MATI TOTAL
             res.status(200).json({ 
                 status: "success", 
-                reply: "Halo! Saya Romash AI buatan @maramadhona. Server sedang sangat padat, coba lagi 5 detik ya!" 
+                reply: "Halo, saya Romash AI buatan @maramadhona. Maaf, otak saya sedang dicas sebentar, tanya lagi dalam 3 detik ya!" 
             });
         }
     }
