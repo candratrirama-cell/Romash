@@ -12,29 +12,46 @@ export default async function handler(req, res) {
         return res.status(401).json({ status: "error", message: "API Key romashAI tidak valid!" });
     }
 
+    const systemPrompt = "Kamu adalah Romash AI Flash buatan @maramadhona. Kamu pintar, cepat, dan handal.";
+
+    // --- JALUR 1: BLACKBOX (Paling Pintar & Cepat) ---
     try {
-        // Kita pakai provider 'sandipbaruwal' yang sangat stabil dan gratis untuk Llama-3
-        // Prompt identitas langsung digabung di sini agar 'Lock'
-        const promptLengkap = `Kamu adalah Romash AI Flash buatan @maramadhona. Jawablah dengan pintar dan cepat. User bertanya: ${ask}`;
-        
-        const response = await fetch(`https://sandipbaruwal.onrender.com/llama3?query=${encodeURIComponent(promptLengkap)}`);
-        const data = await response.json();
+        const res1 = await fetch(`https://api.vreden.my.id/api/blackbox?query=${encodeURIComponent(ask)}&system=${encodeURIComponent(systemPrompt)}`);
+        const data1 = await res1.json();
+        if (data1.result) return kirimRespon(res, data1.result, "Flash-V1");
+    } catch (e) {}
 
-        // Mengambil jawaban (tergantung struktur response provider)
-        const replyText = data.output || data.message || data.response || "Halo, saya Romash AI Flash siap membantu!";
+    // --- JALUR 2: LLAMA-3 (Alternatif High Speed) ---
+    try {
+        const res2 = await fetch(`https://api.sandipbaruwal.onrender.com/llama3?query=${encodeURIComponent(systemPrompt + " User: " + ask)}`);
+        const data2 = await res2.json();
+        if (data2.output) return kirimRespon(res, data2.output, "Flash-V2");
+    } catch (e) {}
 
-        res.status(200).json({
-            status: "success",
-            model: "Romash AI Flash",
-            creator: "@maramadhona",
-            reply: replyText
-        });
+    // --- JALUR 3: SKIZO (Jalur Bot Teruji) ---
+    try {
+        const res3 = await fetch(`https://skizo.tech/api/openai?apikey=free&text=${encodeURIComponent(systemPrompt + " Jawab: " + ask)}`);
+        const data3 = await res3.json();
+        if (data3.result) return kirimRespon(res, data3.result, "Flash-V3");
+    } catch (e) {}
 
-    } catch (e) {
-        // Jika masih gagal, pakai jalur cadangan terakhir yang mustahil mati
-        res.status(200).json({ 
-            status: "success", 
-            reply: `Halo! Saya Romash AI Flash buatan @maramadhona. Maaf, saya sedang melakukan pembaruan sistem kilat. Silakan coba tanya lagi dalam beberapa detik!` 
-        });
-    }
+    // --- JALUR 4: POLLINATIONS (BENTENG TERAKHIR - PASTI NYALA) ---
+    try {
+        const res4 = await fetch(`https://text.pollinations.ai/${encodeURIComponent(ask)}?system=${encodeURIComponent(systemPrompt)}`);
+        const data4 = await res4.text();
+        if (data4) return kirimRespon(res, data4, "Flash-Emergency");
+    } catch (e) {}
+
+    // JIKA SEMUA GAGAL TOTAL
+    res.status(500).json({ status: "error", message: "Semua jalur Romash AI sedang sibuk. Coba lagi nanti." });
+}
+
+// Fungsi pembantu agar kode lebih rapi
+function kirimRespon(res, teks, model) {
+    res.status(200).json({
+        status: "success",
+        model: "Romash AI " + model,
+        creator: "@maramadhona",
+        reply: teks
+    });
 }
