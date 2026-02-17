@@ -9,66 +9,46 @@ export default async function handler(req, res) {
     const DAFTAR_KUNCI = ["romash1ai", "romash9ai", "romash0ai", "Romash5ai", "romash8ai"];
 
     if (!key || !DAFTAR_KUNCI.includes(key)) {
-        return res.status(401).json({ status: "error", message: "Key Romash AI Gen 2 Salah!" });
+        return res.status(401).json({ status: "error", message: "API Key tidak valid!" });
     }
 
-    const lowerAsk = ask.toLowerCase();
-    const isImageReq = /(gambar|foto|lukis|buatkan|bikin)/gi.test(lowerAsk);
-    
-    // --- FITUR GAMBAR (Otomatis & Ringan) ---
-    if (isImageReq) {
-        const cleanPrompt = ask.replace(/(bikinkan|buatkan|tampilkan|tolong|gambar|foto|lukis|kan|bikin|ai|romash)/gi, '').trim();
-        const finalPrompt = cleanPrompt || "pemandangan";
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=512&height=512&nologo=true&seed=${Math.floor(Math.random() * 99999)}`;
-        
-        return res.status(200).json({
-            status: "success",
-            series: "Romash AI Gen 2",
-            type: "image",
-            reply: `Ini gambar **${finalPrompt}** buat kamu:`,
-            image_url: imageUrl
-        });
-    }
-
-    // --- FITUR CHAT 3 JALUR BALAPAN (TANPA BATAS WAKTU) ---
-    const sys = encodeURIComponent("Kamu adalah Romash AI Gen 2 buatan @maramadhona. Jawab dengan cerdas dan cepat.");
+    const sys = encodeURIComponent("Kamu adalah Romash AI Gen 2 buatan @maramadhona. Jawab dengan sangat cepat dan akurat.");
     const query = encodeURIComponent(ask);
-    
-    // 3 Model terbaik untuk diadu kecepatannya
-    const models = ["openai", "mistral", "search"];
+
+    // Kita pilih 4 model tercepat untuk diadu kecepatannya
+    const fastModels = ["openai", "mistral", "llama", "search"];
 
     try {
-        // Balapan: Siapa yang paling cepat merespon, itu yang diambil
-        const winner = await Promise.any(models.map(async (model) => {
-            const seed = Math.floor(Math.random() * 100000);
-            const response = await fetch(`https://text.pollinations.ai/${query}?system=${sys}&model=${model}&seed=${seed}`);
-            
-            if (!response.ok) throw new Error("Gagal");
+        // TRICK: Memanggil semua model secara bersamaan (Parallel)
+        // Promise.any akan mengambil jawaban dari model yang PALING CEPAT merespon
+        const fastReply = await Promise.any(fastModels.map(async (model) => {
+            const response = await fetch(`https://text.pollinations.ai/${query}?system=${sys}&model=${model}&seed=${Math.floor(Math.random() * 1000)}`);
             const text = await response.text();
             
-            if (text && text.length > 2 && !text.includes("Queue full")) {
+            if (text && !text.includes("Queue full") && text.length > 2) {
                 return { text, model };
             }
-            throw new Error("Antre");
+            throw new Error("Model ini lelet/antre");
         }));
 
         return res.status(200).json({
             status: "success",
-            series: "Romash AI Gen 2",
-            engine: winner.model,
+            series: "Romash AI Gen 2 (Turbo)",
+            engine: fastReply.model,
             creator: "@maramadhona",
-            reply: winner.text.trim()
+            reply: fastReply.text.trim()
         });
 
     } catch (e) {
-        // Fallback terakhir jika semua jalur benar-benar macet total
-        const finalTry = await fetch(`https://text.pollinations.ai/${query}?system=${sys}`);
-        const finalText = await finalTry.text();
-        
+        // Jika mode paralel gagal, balik ke mode standar (Lapis Terakhir)
+        const fallback = await fetch(`https://text.pollinations.ai/${query}?system=${sys}`);
+        const fallbackText = await fallback.text();
+
         res.status(200).json({
             status: "success",
-            series: "Romash AI Gen 2 (Final)",
-            reply: finalText.includes("Queue full") ? "Maaf, semua jalur lagi penuh banget. Coba tanya lagi sebentar ya!" : finalText
+            series: "Romash AI Gen 2 (Fallback)",
+            creator: "@maramadhona",
+            reply: fallbackText.includes("Queue full") ? "Maaf, sistem sedang sangat sibuk. Coba lagi ya!" : fallbackText
         });
     }
 }
