@@ -12,59 +12,50 @@ export default async function handler(req, res) {
         return res.status(401).json({ status: "error", message: "API Key Romash AI Gen 2 tidak valid!" });
     }
 
-    // Identitas Gen 2 - Locked to @maramadhona
-    const sysPrompt = "Kamu adalah Romash AI Gen 2 buatan @maramadhona. Kamu lebih pintar, lebih cepat, dan lebih akurat dari versi sebelumnya. Jawablah setiap pertanyaan dengan sangat baik.";
-    const encodedSys = encodeURIComponent(sysPrompt);
-    const encodedAsk = encodeURIComponent(ask);
+    const lowerAsk = ask.toLowerCase();
+    
+    // --- FITUR GENERATE GAMBAR (Gen 2 Image Engine) ---
+    // Mendeteksi kata kunci: gambar, lukis, foto, buatkan, image, draw
+    if (lowerAsk.includes("gambar") || lowerAsk.includes("foto") || lowerAsk.includes("lukis") || lowerAsk.includes("buatkan")) {
+        const promptGambar = encodeURIComponent(ask);
+        const imageUrl = `https://image.pollinations.ai/prompt/${promptGambar}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 99999)}`;
+        
+        return res.status(200).json({
+            status: "success",
+            series: "Romash AI Gen 2 (Vision)",
+            creator: "@maramadhona",
+            type: "image",
+            reply: "Ini adalah gambar yang kamu minta:",
+            image_url: imageUrl
+        });
+    }
 
-    // 10 Model Pilihan untuk Gen 2
-    const models = [
-        "search",    // Paling akurat untuk fakta/umur presiden
-        "openai",    // Paling pintar secara umum
-        "mistral",   // Sangat cepat
-        "llama",     // Stabil
-        "p1",        // Alternatif
-        "qwen",      // Bagus untuk logika
-        "google",    // Pengetahuan luas
-        "anthropic", // Bahasa natural
-        "unity",     // Cadangan
-        "midjourney" // Cadangan terakhir
-    ];
+    // --- FITUR CHAT (Gen 2 Turbo Parallel) ---
+    const sys = encodeURIComponent("Kamu adalah Romash AI Gen 2 buatan @maramadhona. Kamu pintar, akurat, dan bisa segalanya.");
+    const query = encodeURIComponent(ask);
+    const fastModels = ["openai", "mistral", "search"];
 
     try {
-        for (let i = 0; i < models.length; i++) {
-            try {
-                // Menambahkan Cache Buster (seed & t) agar tidak terkena limit cache
-                const response = await fetch(`https://text.pollinations.ai/${encodedAsk}?system=${encodedSys}&model=${models[i]}&seed=${Math.floor(Math.random() * 99999)}&cache=no`);
-                
-                if (!response.ok) continue;
+        const fastReply = await Promise.any(fastModels.map(async (model) => {
+            const response = await fetch(`https://text.pollinations.ai/${query}?system=${sys}&model=${model}&seed=${Math.floor(Math.random() * 1000)}`);
+            const text = await response.text();
+            if (text && !text.includes("Queue full") && text.length > 2) return { text, model };
+            throw new Error("Skip");
+        }));
 
-                const text = await response.text();
-
-                // Validasi jawaban agar tidak dapet 'Queue full' atau jawaban kosong
-                if (text && text.length > 3 && !text.includes("Queue full") && !text.includes("Rate limit")) {
-                    return res.status(200).json({
-                        status: "success",
-                        series: "Romash AI Gen 2",
-                        engine: models[i],
-                        layer: i + 1,
-                        creator: "@maramadhona",
-                        reply: text.trim()
-                    });
-                }
-            } catch (err) {
-                continue; // Jika satu model gagal, otomatis lari ke model berikutnya
-            }
-        }
-
-        // Jika semua 10 model sibuk
-        res.status(200).json({
+        return res.status(200).json({
             status: "success",
-            series: "Romash AI Gen 2",
-            reply: "Halo, saya Romash AI Gen 2 buatan @maramadhona. Maaf, saat ini 10 jalur saya sedang penuh. Mohon coba lagi sebentar saja!"
+            series: "Romash AI Gen 2 (Turbo)",
+            engine: fastReply.model,
+            creator: "@maramadhona",
+            reply: fastReply.text.trim()
         });
 
     } catch (e) {
-        res.status(500).json({ status: "error", message: "Sistem Gen 2 mengalami kendala teknis." });
+        res.status(200).json({
+            status: "success",
+            series: "Romash AI Gen 2",
+            reply: "Halo! Saya Romash AI Gen 2. Sedang ada kendala sedikit, coba tanya lagi ya!"
+        });
     }
 }
