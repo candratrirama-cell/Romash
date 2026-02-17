@@ -1,13 +1,15 @@
 export default async function handler(req, res) {
     // 1. DAFTAR API KEY RESMI ROMASH AI
-    const DAFTAR_KEY = [
+        const DAFTAR_KEY = [
         "romash1go0g1k",
         "romash1A8k1hKs",
         "romash9AxY137",
         "romash6ahenmh9",
         "romash6q9as10",
-        "romashforkenzie" ,
-        "romashai10"
+        "romashforkenzie",
+        "romashai10",
+        "4RB",
+        "alza"
     ];
 
     // 2. MENGAMBIL DATA DARI REQUEST
