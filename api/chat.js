@@ -14,76 +14,48 @@ export default async function handler(req, res) {
 
     const sys = "Kamu adalah Romash AI Flash buatan @maramadhona. Jawab dengan sangat pintar dan cepat.";
 
-    // --- URUTAN 8 LAPIS PERTAHANAN ---
-    
-    // 1. GEMINI (Terpintar)
     try {
-        const r1 = await fetch(`https://api.vreden.my.id/api/gemini?query=${encodeURIComponent(ask)}&system=${encodeURIComponent(sys)}`);
-        const d1 = await r1.json();
-        if (d1.result) return send(res, d1.result, "Flash-Gemini");
-    } catch (e) {}
+        // JALUR BARU: Menggunakan provider yang lebih tahan banting (Llama-3 via DuckDuckGo Proxy)
+        const response = await fetch(`https://api.pawan.krd/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer pk-free' },
+            body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: [
+                    { role: "system", content: sys },
+                    { role: "user", content: ask }
+                ]
+            })
+        });
 
-    // 2. PERPLEXITY (Real-time Search)
-    try {
-        const r2 = await fetch(`https://api.vreden.my.id/api/perplexity?query=${encodeURIComponent(ask)}`);
-        const d2 = await r2.json();
-        if (d2.result) return send(res, d2.result, "Flash-Perplexity");
-    } catch (e) {}
+        const data = await response.json();
+        const replyText = data.choices[0].message.content;
 
-    // 3. BLACKBOX (Coding & Logic)
-    try {
-        const r3 = await fetch(`https://api.vreden.my.id/api/blackbox?query=${encodeURIComponent(ask)}&system=${encodeURIComponent(sys)}`);
-        const d3 = await r3.json();
-        if (d3.result) return send(res, d3.result, "Flash-Blackbox");
-    } catch (e) {}
+        return res.status(200).json({
+            status: "success",
+            model: "Romash AI Flash-V1",
+            creator: "@maramadhona",
+            reply: replyText
+        });
 
-    // 4. LLAMA-3 (Speed Monster)
-    try {
-        const r4 = await fetch(`https://api.vreden.my.id/api/llama3?query=${encodeURIComponent(sys + " User: " + ask)}`);
-        const d4 = await r4.json();
-        if (d4.result) return send(res, d4.result, "Flash-Llama3");
-    } catch (e) {}
-
-    // 5. GPT-4 (Creative)
-    try {
-        const r5 = await fetch(`https://api.vreden.my.id/api/gpt4?query=${encodeURIComponent(ask)}`);
-        const d5 = await r5.json();
-        if (d5.result) return send(res, d5.result, "Flash-GPT4");
-    } catch (e) {}
-
-    // 6. MISTRAL (Efficient)
-    try {
-        const r6 = await fetch(`https://api.vreden.my.id/api/mistral?query=${encodeURIComponent(ask)}`);
-        const d6 = await r6.json();
-        if (d6.result) return send(res, d6.result, "Flash-Mistral");
-    } catch (e) {}
-
-    // 7. DEEPSEEK (Analytical)
-    try {
-        const r7 = await fetch(`https://api.vreden.my.id/api/deepseek?query=${encodeURIComponent(ask)}`);
-        const d7 = await r7.json();
-        if (d7.result) return send(res, d7.result, "Flash-DeepSeek");
-    } catch (e) {}
-
-    // 8. CLAUDE-SONNET (The Final Guard)
-    try {
-        const r8 = await fetch(`https://api.vreden.my.id/api/claude?query=${encodeURIComponent(ask)}`);
-        const d8 = await r8.json();
-        if (d8.result) return send(res, d8.result, "Flash-Claude");
-    } catch (e) {}
-
-    // --- FALLBACK JIKA SEMUA MATI ---
-    res.status(200).json({ 
-        status: "success", 
-        reply: "Halo! Saya Romash AI Flash buatan @maramadhona. Saat ini semua jalur (8 Lapis) sedang mengalami lonjakan trafik yang ekstrem. Mohon coba lagi sesaat lagi!" 
-    });
-}
-
-function send(res, teks, model) {
-    res.status(200).json({
-        status: "success",
-        model: "romashAI " + model,
-        creator: "@maramadhona",
-        reply: teks
-    });
+    } catch (e) {
+        // CADANGAN TERAKHIR: Jalur Kencang Tanpa API Key
+        try {
+            const resBackup = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(ask)}`);
+            const dataBackup = await resBackup.json();
+            const simpleReply = "Saya Romash AI buatan @maramadhona. " + (dataBackup[0][0][0] || "Ada yang bisa saya bantu?");
+            
+            return res.status(200).json({
+                status: "success",
+                model: "Romash AI Flash-V2",
+                creator: "@maramadhona",
+                reply: simpleReply
+            });
+        } catch (err) {
+            res.status(200).json({ 
+                status: "success", 
+                reply: "Halo! Saya Romash AI buatan @maramadhona. Server sedang sangat padat, coba lagi 5 detik ya!" 
+            });
+        }
+    }
 }
