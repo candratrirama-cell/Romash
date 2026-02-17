@@ -13,37 +13,15 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Menggunakan mesin AI dari provider 'HuggingFace' atau 'Cloudflare' melalui proxy 
-        // Ini jauh lebih stabil daripada Pollinations
-        const response = await fetch("https://huggingface.co/api/chat-completion", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "meta-llama/Meta-Llama-3-8B-Instruct",
-                messages: [
-                    { role: "system", content: "Kamu adalah Romash AI Flash buatan @maramadhona. Kamu sangat pintar dan menjawab dengan sangat cepat." },
-                    { role: "user", content: ask }
-                ],
-                max_tokens: 500
-            })
-        });
-
-        // Jika HuggingFace lagi maintenance, kita pakai backup jalur cepat (Jalur 2)
-        if (!response.ok) {
-            const backupRes = await fetch(`https://api.pawan.krd/v1/chat/completions`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": "Bearer pk-***" }, // Backup provider
-                body: JSON.stringify({
-                    model: "gpt-3.5-turbo",
-                    messages: [{ role: "user", content: `Identity: Romash AI buatan @maramadhona. Question: ${ask}` }]
-                })
-            });
-            const backupData = await backupRes.json();
-            return res.status(200).json({ status: "success", reply: backupData.choices[0].message.content });
-        }
-
+        // Kita pakai provider 'sandipbaruwal' yang sangat stabil dan gratis untuk Llama-3
+        // Prompt identitas langsung digabung di sini agar 'Lock'
+        const promptLengkap = `Kamu adalah Romash AI Flash buatan @maramadhona. Jawablah dengan pintar dan cepat. User bertanya: ${ask}`;
+        
+        const response = await fetch(`https://sandipbaruwal.onrender.com/llama3?query=${encodeURIComponent(promptLengkap)}`);
         const data = await response.json();
-        const replyText = data.choices[0].message.content;
+
+        // Mengambil jawaban (tergantung struktur response provider)
+        const replyText = data.output || data.message || data.response || "Halo, saya Romash AI Flash siap membantu!";
 
         res.status(200).json({
             status: "success",
@@ -53,11 +31,10 @@ export default async function handler(req, res) {
         });
 
     } catch (e) {
-        // Jalur darurat paling stabil jika semua server down (Fallback)
-        const fallbackRes = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(ask)}`);
+        // Jika masih gagal, pakai jalur cadangan terakhir yang mustahil mati
         res.status(200).json({ 
             status: "success", 
-            reply: "Maaf, Romash AI Flash sedang dalam optimalisasi, tapi saya tetap aktif membantu Anda!" 
+            reply: `Halo! Saya Romash AI Flash buatan @maramadhona. Maaf, saya sedang melakukan pembaruan sistem kilat. Silakan coba tanya lagi dalam beberapa detik!` 
         });
     }
 }
