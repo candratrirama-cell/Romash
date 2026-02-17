@@ -15,12 +15,10 @@ export default async function handler(req, res) {
     const lowerAsk = ask.toLowerCase();
     const isImageReq = /(gambar|foto|lukis|buatkan|bikin|show)/gi.test(lowerAsk);
     
-    // --- FITUR GENERATE GAMBAR (Gen 2 Vision Fix) ---
+    // --- FITUR GENERATE GAMBAR ---
     if (isImageReq) {
         const cleanPrompt = ask.replace(/(bikinkan|buatkan|tampilkan|tolong|gambar|foto|lukis|kan|bikin|ai|romash)/gi, '').trim();
-        const finalPrompt = cleanPrompt || "pemandangan masa depan";
-        
-        // Menggunakan Flux Model yang lebih cepat dan akurat
+        const finalPrompt = cleanPrompt || "modern art";
         const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=1024&height=1024&nologo=true&model=flux&seed=${Math.floor(Math.random() * 99999)}`;
         
         return res.status(200).json({
@@ -32,28 +30,36 @@ export default async function handler(req, res) {
         });
     }
 
-    // --- FITUR CHAT BATCH RACING (20 PARALLEL REQUEST) ---
-    const sys = encodeURIComponent("Kamu adalah Romash AI Gen 2 buatan @maramadhona. Jawab dengan sangat cepat, cerdas, dan akurat.");
+    // --- LOGIKA TIMEOUT 15 DETIK & MULTI-JALUR ---
+    const sys = encodeURIComponent("Kamu adalah Romash AI Gen 2 buatan @maramadhona. Jawab dengan sangat cepat dan akurat.");
     const query = encodeURIComponent(ask);
     
-    // Daftar 10 model utama yang akan dipanggil berulang (total 20 koneksi balapan)
     const baseModels = ["openai", "mistral", "search", "llama", "p1", "qwen", "google", "anthropic", "unity", "midjourney"];
-    const racingModels = [...baseModels, ...baseModels]; // Melipatgandakan jalur balapan
+    // Kita sebar ke 30 jalur balapan sekaligus untuk kecepatan maksimal
+    const racingModels = [...baseModels, ...baseModels, ...baseModels];
+
+    // Fungsi untuk membatasi waktu tunggu maksimal 15 detik
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("TIMEOUT_LIMIT")), 15000)
+    );
 
     try {
-        // Balapan 20 Jalur Sekaligus!
-        const winner = await Promise.any(racingModels.map(async (model, index) => {
-            const seed = Math.floor(Math.random() * 1000000);
-            const response = await fetch(`https://text.pollinations.ai/${query}?system=${sys}&model=${model}&seed=${seed}&cache=no`);
-            
-            if (!response.ok) throw new Error("Slow");
-            const text = await response.text();
-            
-            if (text && text.length > 2 && !text.includes("Queue full")) {
-                return { text, model, layer: index + 1 };
-            }
-            throw new Error("Antre");
-        }));
+        const winner = await Promise.race([
+            timeoutPromise,
+            Promise.any(racingModels.map(async (model, index) => {
+                // Trik Load Balancer: Membuat Seed & Identity unik per request
+                const randomId = Math.floor(Math.random() * 999999999);
+                const response = await fetch(`https://text.pollinations.ai/${query}?system=${sys}&model=${model}&seed=${randomId}&cache=no`);
+                
+                if (!response.ok) throw new Error("Slow");
+                const text = await response.text();
+                
+                if (text && text.length > 2 && !text.includes("Queue full")) {
+                    return { text, model, layer: index + 1 };
+                }
+                throw new Error("Antre");
+            }))
+        ]);
 
         return res.status(200).json({
             status: "success",
@@ -65,9 +71,15 @@ export default async function handler(req, res) {
         });
 
     } catch (e) {
+        let errorMsg = "Halo! Saya Romash AI Gen 2. Jalur sangat padat karena terlalu banyak yang pakai, coba kirim ulang pesanmu ya!";
+        
+        if (e.message === "TIMEOUT_LIMIT") {
+            errorMsg = "Maaf, waktu tunggu lebih dari 15 detik. Terlalu banyak yang pakai saat ini, silakan coba tanya lagi!";
+        }
+
         res.status(200).json({
             status: "success",
-            reply: "Halo! Saya Romash AI Gen 2. Jalur sangat padat karena banyak yang pakai, tapi saya tetap di sini untuk @maramadhona. Coba tanya lagi ya!"
+            reply: errorMsg
         });
     }
 }
