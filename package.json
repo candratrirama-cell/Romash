@@ -1,8 +1,0 @@
-{
-  "name": "romash-ai-gen2",
-  "version": "1.0.0",
-  "main": "api/chat.js",
-  "engines": {
-    "node": "20.x"
-  }
-}
