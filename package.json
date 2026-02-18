@@ -1,0 +1,7 @@
+{
+  "name": "romash-ai-gen-2",
+  "version": "1.0.0",
+  "dependencies": {
+    "groq-sdk": "latest"
+  }
+}
