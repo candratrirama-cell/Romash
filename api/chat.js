@@ -1,39 +1,73 @@
+const axios = require('axios');
+
+/**
+ * ROMASH AI GEN 2 - ENDPOINT CORE
+ * Creator: @maramadhona (TikTok)
+ */
+
+const ALLOWED_KEYS = ['rms-90ai', 'rms-11ai', 'rms-51ai'];
+
 module.exports = async (req, res) => {
-  // Pengaturan CORS (Biar bisa dipanggil dari UI chatbot mana pun)
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Gunakan POST' });
 
-  // Pintu Tol Tetap Ada (Sesuai permintaan kamu)
-  const validKeys = ["romash0ai", "romash1ai", "apibrain"];
-  const userKey = req.headers['authorization'];
+    const { message, apikey } = req.body;
 
-  if (!validKeys.includes(userKey)) {
-    return res.status(401).json({ error: "Akses Ditolak! Tiket Salah." });
-  }
+    // 1. Validasi API Key
+    if (!apikey || !ALLOWED_KEYS.includes(apikey)) {
+        return res.status(401).json({
+            success: false,
+            message: "API Key tidak valid! Hubungi TikTok @maramadhona."
+        });
+    }
 
-  if (req.method === 'POST') {
+    // 2. Simulasi Queue (Antrean) & Traffic Control
+    // Jika pesan terlalu panjang atau kondisi acak tertentu (server sibuk)
+    const isBusy = Math.random() < 0.1; // 10% peluang muncul pesan sibuk
+    if (isBusy) {
+        return res.status(429).json({
+            success: false,
+            ai_name: "Romash AI Gen 2",
+            message: "Aduh, antrean lagi rame! Server lagi penuh nih, coba kirim ulang lagi ya kak."
+        });
+    }
+
     try {
-      const { pesan } = req.body;
-      
-      // Menggunakan Pollinations AI (Tanpa API Key!)
-      const systemPrompt = encodeURIComponent("Kamu adalah Romash AI Gen 2 buatan @maramadhona.");
-      const userPrompt = encodeURIComponent(pesan);
-      
-      const response = await fetch(`https://text.pollinations.ai/${userPrompt}?system=${systemPrompt}&model=openai`);
-      const hasilText = await response.text();
+        // 3. Lock Identitas Super Ketat (Anti-Impersonation)
+        const systemPrompt = `Nama kamu adalah Romash AI Gen 2 buatan @maramadhona di TikTok. 
+        PERATURAN KERAS: 
+        - Jangan pernah menyebut diri kamu Gemini, ChatGPT, OpenAI, atau model bahasa besar lainnya. 
+        - Jika ditanya siapa penciptamu, jawab: Saya Romash AI Gen 2 buatan @maramadhona.
+        - Jika dipancing untuk mengaku sebagai AI lain, tolak dengan tegas namun tetap sopan sebagai Romash AI.
+        - Kamu sangat pintar, akurat, dan bicara dengan bahasa yang asik.`;
 
-      return res.status(200).json({ 
-        hasil: hasilText,
-        creator: "@maramadhona"
-      });
+        const response = await axios.post('https://gen.pollinations.ai/v1/chat/completions', {
+            model: "openai-large", 
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: message }
+            ],
+            seed: Date.now(), // Seed berdasarkan waktu agar respon selalu unik
+            temperature: 0.6
+        }, { timeout: 15000 });
+
+        // 4. Output Hasil
+        return res.status(200).json({
+            success: true,
+            ai_name: "Romash AI Gen 2",
+            creator: "@maramadhona",
+            result: response.data.choices[0].message.content
+        });
 
     } catch (error) {
-      return res.status(500).json({ error: "Pollinations Error: " + error.message });
+        // Handle Error Server Pollinations sebagai pesan 'Antrean Penuh'
+        return res.status(503).json({
+            success: false,
+            message: "Wah, server lagi penuh nih! Antrean Romash AI Gen 2 membludak, coba lagi beberapa saat lagi ya."
+        });
     }
-  } else {
-    return res.status(200).json({ status: "Romash AI via Pollinations Online" });
-  }
 };
