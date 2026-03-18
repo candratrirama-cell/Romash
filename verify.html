@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi Keamanan - Guardiansites</title>
+    <style>
+        body { background: #ffffff; font-family: 'Arial Black', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { border: 4px solid #000; padding: 40px; box-shadow: 10px 10px 0 #000; text-align: center; max-width: 350px; width: 90%; }
+        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #00FF66; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h1 { font-size: 20px; text-transform: uppercase; margin: 0 0 10px; }
+        p { font-size: 13px; font-family: monospace; color: #666; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="spinner"></div>
+        <h1>GUARDIANSITES</h1>
+        <p id="msg">Menganalisis browser... <br>Mohon tunggu sebentar.</p>
+    </div>
+
+    <script>
+        // Scanning selama 5 detik (Bisa kamu ganti jadi 10000 untuk 10 detik)
+        setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromPath = urlParams.get('from');
+
+            if (fromPath) {
+                const targetUrl = atob(fromPath).split('?')[0]; // Ambil URL bersih
+                const ts = Math.floor(Date.now() / 1000); // Detik sekarang
+                const token = btoa("MARA-SECURE-" + ts); // Buat Token OTP
+
+                // Balik otomatis ke web asal bawa Token & Jam
+                window.location.href = targetUrl + "?gs_token=" + token + "&ts=" + ts;
+            } else {
+                // Jika masuk langsung ke verify.html, lempar ke index
+                window.location.href = "index.html";
+            }
+        }, 5000); 
+    </script>
+</body>
+</html>
