@@ -2,161 +2,34 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Slow Admin - Master Access</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUARDIANSITES - Memverifikasi...</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
-        body { background-color: #f0f2f5; color: #1a1a1a; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .neo-card { background: white; border: 4px solid #1a1a1a; box-shadow: 8px 8px 0px #1a1a1a; }
-        .btn-action { border: 2px solid #1a1a1a; font-weight: 800; transition: 0.2s; font-size: 10px; padding: 4px 8px; }
-        .btn-action:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0px #1a1a1a; }
+        body { background: #fff; font-family: 'Arial Black', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .box { border: 4px solid #000; padding: 40px; box-shadow: 10px 10px 0 #000; text-align: center; max-width: 350px; }
+        .scan { width: 100%; height: 10px; background: #eee; border: 2px solid #000; margin-top: 20px; position: relative; overflow: hidden; }
+        .bar { width: 0%; height: 100%; background: #00FF66; animation: loading 5s linear forwards; }
+        @keyframes loading { to { width: 100%; } }
+        h1 { font-size: 22px; text-transform: uppercase; margin: 0; }
+        p { font-size: 12px; color: #555; margin-top: 10px; }
     </style>
 </head>
-<body class="p-8">
+<body>
 
-    <header class="flex justify-between items-center mb-10 animate__animated animate__fadeIn">
-        <div>
-            <h1 class="text-4xl font-black italic tracking-tighter text-blue-600">SLOW_ADMIN</h1>
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Global Control Panel</p>
-        </div>
-        <div class="neo-card bg-yellow-400 px-6 py-2 font-black uppercase text-sm">
-            Total Projects: <span id="total-projects">0</span>
-        </div>
-    </header>
+<div class="box">
+    <h1>GUARDIANSITES</h1>
+    <p>Menganalisis Browser & IP... <br>Mohon tidak menutup halaman ini.</p>
+    <div class="scan"><div class="bar"></div></div>
+</div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div class="lg:col-span-8 space-y-8">
-            <div class="neo-card p-6 h-[400px]">
-                <h3 class="font-black mb-4 uppercase italic">Global Traffic Monitor</h3>
-                <canvas id="adminChart"></canvas>
-            </div>
+<script>
+    // Setelah 5 detik, buat token dan pindah ke objective.html
+    setTimeout(() => {
+        const ts = Math.floor(Date.now() / 1000); // Waktu sekarang (detik)
+        const token = btoa("MARA-LOCK-" + ts); // Bikin Kunci Rahasia
+        window.location.href = "objective.html?gs_token=" + token + "&ts=" + ts;
+    }, 5000);
+</script>
 
-            <div class="neo-card p-6">
-                <h3 class="font-black mb-6 uppercase italic underline">Global Project Inspector</h3>
-                <div id="all-projects-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    </div>
-            </div>
-        </div>
-
-        <div class="lg:col-span-4 space-y-8">
-            <div class="neo-card p-6 bg-white">
-                <h3 class="font-black mb-4 uppercase italic text-green-600">Registered Users</h3>
-                <div id="user-list" class="space-y-2 max-h-[300px] overflow-y-auto">
-                    </div>
-            </div>
-
-            <div class="neo-card p-6 bg-zinc-900 text-white">
-                <h3 class="font-black mb-4 uppercase italic text-red-500">Live Global Errors</h3>
-                <div id="global-errors" class="space-y-3 font-mono text-[9px] max-h-[400px] overflow-y-auto">
-                    <p class="text-zinc-600 italic">Waiting for incoming errors...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAa1YQqXXUn3ssriyyhl6mYHo47-rOcnmg",
-            databaseURL: "https://tools-ab6a6-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "tools-ab6a6"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        let adminChart;
-
-        // Init Global Chart
-        const ctx = document.getElementById('adminChart').getContext('2d');
-        adminChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: [], datasets: [{ label: 'Global Views', data: [], backgroundColor: '#22c55e', borderColor: '#1a1a1a', borderWidth: 3 }] },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-
-        // 1. MONITOR USERS
-        onValue(ref(db, 'users'), (snap) => {
-            const userDiv = document.getElementById('user-list');
-            userDiv.innerHTML = '';
-            snap.forEach(user => {
-                userDiv.innerHTML += `
-                <div class="p-2 border-2 border-black flex justify-between items-center text-xs font-bold">
-                    <span>👤 ${user.key}</span>
-                    <span class="text-gray-400">Pass: ${user.val().password}</span>
-                </div>`;
-            });
-        });
-
-        // 2. MONITOR PROJECTS & CHART
-        onValue(ref(db, 'deploys'), (snap) => {
-            const projList = document.getElementById('all-projects-list');
-            const totalText = document.getElementById('total-projects');
-            projList.innerHTML = '';
-            
-            let labels = [];
-            let dataViews = [];
-            let count = 0;
-
-            snap.forEach(child => {
-                count++;
-                const name = child.key;
-                const data = child.val();
-                labels.push(name);
-                dataViews.push(data.views || 0);
-
-                projList.innerHTML += `
-                <div class="neo-card p-4 text-xs">
-                    <div class="flex justify-between mb-2">
-                        <span class="font-black text-blue-600 italic">/${name}</span>
-                        <span class="font-black">👁 ${data.views || 0}</span>
-                    </div>
-                    <p class="text-[9px] text-gray-400 mb-3 italic">Owner: ${data.author}</p>
-                    <textarea id="code-${name}" class="w-full h-20 bg-gray-100 p-2 font-mono text-[9px] border-2 border-black mb-3">${data.code}</textarea>
-                    <div class="flex gap-2">
-                        <button onclick="saveAdmin('${name}')" class="btn-action bg-green-400 flex-1">UPDATE</button>
-                        <button onclick="deleteAdmin('${name}')" class="btn-action bg-red-400 flex-1">HAPUS</button>
-                    </div>
-                </div>`;
-            });
-
-            totalText.innerText = count;
-            adminChart.data.labels = labels;
-            adminChart.data.datasets[0].data = dataViews;
-            adminChart.update();
-        });
-
-        // 3. MONITOR GLOBAL ERRORS
-        onValue(ref(db, 'logs'), (snap) => {
-            const errDiv = document.getElementById('global-errors');
-            errDiv.innerHTML = '';
-            if(!snap.exists()) return errDiv.innerHTML = "No logs.";
-
-            snap.forEach(projectLog => {
-                Object.values(projectLog.val()).forEach(log => {
-                    errDiv.innerHTML += `
-                    <div class="p-2 border-b border-zinc-800">
-                        <span class="text-yellow-500">[/ ${projectLog.key}]</span> ${log.msg}
-                    </div>`;
-                });
-            });
-        });
-
-        // Master Actions
-        window.saveAdmin = async (name) => {
-            const newCode = document.getElementById(`code-${name}`).value;
-            await update(ref(db, 'deploys/' + name), { code: newCode });
-            alert("Project /" + name + " updated by Admin!");
-        };
-
-        window.deleteAdmin = async (name) => {
-            if(confirm("Hapus paksa project " + name + "?")) {
-                await remove(ref(db, 'deploys/' + name));
-            }
-        };
-
-    </script>
 </body>
 </html>
