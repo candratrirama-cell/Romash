@@ -3,33 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUARDIANSITES - Memverifikasi...</title>
+    <title>GUARDIANSITES - Verifikasi</title>
     <style>
-        body { background: #fff; font-family: 'Arial Black', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
-        .box { border: 4px solid #000; padding: 40px; box-shadow: 10px 10px 0 #000; text-align: center; max-width: 350px; }
-        .scan { width: 100%; height: 10px; background: #eee; border: 2px solid #000; margin-top: 20px; position: relative; overflow: hidden; }
-        .bar { width: 0%; height: 100%; background: #00FF66; animation: loading 5s linear forwards; }
-        @keyframes loading { to { width: 100%; } }
-        h1 { font-size: 22px; text-transform: uppercase; margin: 0; }
-        p { font-size: 12px; color: #555; margin-top: 10px; }
+        body { background: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { border: 4px solid #000; padding: 30px; box-shadow: 10px 10px 0 #000; text-align: center; width: 300px; }
+        .bar-bg { width: 100%; height: 15px; background: #eee; border: 2px solid #000; margin-top: 15px; }
+        .bar-fill { width: 0%; height: 100%; background: #00FF66; animation: load 3s linear forwards; }
+        @keyframes load { to { width: 100%; } }
     </style>
 </head>
 <body>
+    <div class="card">
+        <h2 style="margin:0">GUARDIANSITES</h2>
+        <p style="font-size:12px">Menciptakan akses aman...</p>
+        <div class="bar-bg"><div class="bar-fill"></div></div>
+    </div>
 
-<div class="box">
-    <h1>GUARDIANSITES</h1>
-    <p>Menganalisis Browser & IP... <br>Mohon tidak menutup halaman ini.</p>
-    <div class="scan"><div class="bar"></div></div>
-</div>
-
-<script>
-    // Setelah 5 detik, buat token dan pindah ke objective.html
-    setTimeout(() => {
-        const ts = Math.floor(Date.now() / 1000); // Waktu sekarang (detik)
-        const token = btoa("MARA-LOCK-" + ts); // Bikin Kunci Rahasia
-        window.location.href = "objective.html?gs_token=" + token + "&ts=" + ts;
-    }, 5000);
-</script>
-
+    <script>
+        // Tunggu 3 detik biar kelihatan proses scannya
+        setTimeout(() => {
+            const ts = Math.floor(Date.now() / 1000);
+            // Bikin token: MARA-SECURE-6288 + jam detik ini
+            const token = btoa("MARA-SECURE-6288-" + ts);
+            
+            // Pindah ke objective.html bawa kuncinya
+            window.location.href = "objective.html?gs_token=" + token + "&ts=" + ts;
+        }, 3000);
+    </script>
 </body>
 </html>
