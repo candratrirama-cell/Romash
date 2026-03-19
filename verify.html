@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify - CAPTCHA</title>
+</head>
+<body>
+    <h2>Verify You Are Human</h2>
+    <p>We need to ensure that you're not a bot.</p>
+
+    <!-- CAPTCHA akan muncul jika IP dianggap mencurigakan -->
+    <div id="captchaSection" style="display: none;">
+        <p>Solve the CAPTCHA below to continue:</p>
+        <!-- CAPTCHA buatan sendiri -->
+        <label for="captcha">What is 5 + 3?</label>
+        <input type="number" id="captcha" required>
+        <button id="submitCaptcha">Verify</button>
+    </div>
+
+    <!-- Pesan jika tidak perlu CAPTCHA -->
+    <div id="noCaptchaMessage">
+        <p>Welcome, you're all set!</p>
+        <button id="continueButton">Proceed</button>
+    </div>
+
+    <script>
+        // Fungsi untuk mendeteksi IP pengguna (gunakan API eksternal)
+        function detectIP() {
+            fetch('https://ipinfo.io/json?token=YOUR_API_KEY')
+                .then(response => response.json())
+                .then(data => {
+                    const ip = data.ip;
+                    console.log("User's IP:", ip);
+
+                    // Periksa apakah IP mencurigakan (contoh: jika berasal dari negara tertentu atau daftar hitam)
+                    if (data.country === 'US' || isSuspiciousIP(ip)) {
+                        console.log('Suspicious IP detected. Showing CAPTCHA.');
+                        showCaptcha();
+                    } else {
+                        console.log('Safe IP detected. Proceeding without CAPTCHA.');
+                        showNoCaptchaMessage();
+                    }
+                })
+                .catch(error => console.error('Error detecting IP:', error));
+        }
+
+        // Fungsi untuk menampilkan CAPTCHA
+        function showCaptcha() {
+            document.getElementById('captchaSection').style.display = 'block';
+            document.getElementById('noCaptchaMessage').style.display = 'none';
+
+            document.getElementById('submitCaptcha').addEventListener('click', function() {
+                const captchaInput = document.getElementById('captcha').value;
+                if (captchaInput == '8') { // 5 + 3 = 8
+                    localStorage.setItem('verified', 'true');
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Incorrect CAPTCHA. Try again.');
+                }
+            });
+        }
+
+        // Fungsi untuk menampilkan pesan tanpa CAPTCHA
+        function showNoCaptchaMessage() {
+            document.getElementById('noCaptchaMessage').style.display = 'block';
+            document.getElementById('captchaSection').style.display = 'none';
+
+            document.getElementById('continueButton').addEventListener('click', function() {
+                localStorage.setItem('verified', 'true');
+                window.location.href = 'index.html';
+            });
+        }
+
+        // Cek apakah IP dianggap mencurigakan
+        function isSuspiciousIP(ip) {
+            // Misalnya, kalau IP berasal dari daftar hitam atau negara tertentu
+            // Ini contoh sederhana, bisa diperluas sesuai kebutuhan
+            const suspiciousIPs = ['192.168.1.1']; // Misalnya, IP tertentu yang sudah diketahui
+            return suspiciousIPs.includes(ip);
+        }
+
+        // Jalankan deteksi IP saat halaman dimuat
+        detectIP();
+    </script>
+</body>
+</html>
