@@ -3,17 +3,19 @@
 <head>
     <script>
     (function() {
-        const urlToken = new URLSearchParams(window.location.search).get('token');
-        const sessionToken = sessionStorage.getItem('rtysafe_session');
-        if (urlToken && urlToken === sessionToken) {
-            const cleanUrl = window.location.origin + window.location.pathname;
-            window.history.replaceState(null, "", cleanUrl);
-        } else if (!sessionToken) {
+        const urlTk = new URLSearchParams(window.location.search).get('token');
+        const ssTk = sessionStorage.getItem('rtysafe_session');
+        if (urlTk && urlTk === ssTk) {
+            window.history.replaceState(null, "", window.location.pathname);
+        } else if (!ssTk) {
             window.location.href = "verify.html";
         }
     })();
     </script>
     <style>html { visibility: hidden; }</style>
+    <script>
+        window.onload = function() { document.documentElement.style.visibility = 'visible'; }
+    </script>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -163,7 +165,5 @@
         });
     }
 </script>
-
-    <script>document.documentElement.style.visibility = 'visible';</script>
 </body>
 </html>
