@@ -53,8 +53,8 @@
             document.getElementById('submitCaptcha').addEventListener('click', function() {
                 const captchaInput = document.getElementById('captcha').value;
                 if (captchaInput == '8') { // 5 + 3 = 8
-                    localStorage.setItem('verified', 'true');
-                    window.location.href = 'index.html';
+                    const token = generateToken();
+                    window.location.href = `index.html?token=${token}`;  // Arahkan ke index.html dengan token di URL
                 } else {
                     alert('Incorrect CAPTCHA. Try again.');
                 }
@@ -67,16 +67,20 @@
             document.getElementById('captchaSection').style.display = 'none';
 
             document.getElementById('continueButton').addEventListener('click', function() {
-                localStorage.setItem('verified', 'true');
-                window.location.href = 'index.html';
+                const token = generateToken();
+                window.location.href = `index.html?token=${token}`;  // Arahkan ke index.html dengan token di URL
             });
+        }
+
+        // Fungsi untuk menghasilkan token unik
+        function generateToken() {
+            return 'token-' + Date.now();  // Menggunakan timestamp untuk membuat token unik
         }
 
         // Cek apakah IP dianggap mencurigakan
         function isSuspiciousIP(ip) {
             // Misalnya, kalau IP berasal dari daftar hitam atau negara tertentu
-            // Ini contoh sederhana, bisa diperluas sesuai kebutuhan
-            const suspiciousIPs = ['192.168.1.1']; // Misalnya, IP tertentu yang sudah diketahui
+            const suspiciousIPs = ['192.168.1.1'];  // IP yang dikenal mencurigakan
             return suspiciousIPs.includes(ip);
         }
 
