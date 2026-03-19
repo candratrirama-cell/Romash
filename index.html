@@ -15,9 +15,14 @@
         const token = urlParams.get('token');
 
         if (!token) {
-            // Kalau tidak ada token, redirect ke halaman verifikasi
+            // Kalau tidak ada token di URL, redirect ke halaman verifikasi (verify.html)
             window.location.href = 'verify.html';
         } else {
+            // Token ditemukan, proses validasi token (misalnya cek di session atau database)
+
+            // Hapus token dari URL setelah digunakan (menghindari penggunaan kembali token)
+            history.replaceState(null, null, window.location.pathname);  // Menghapus query string (token) dari URL
+
             console.log('Valid token:', token);
             // Disini bisa lanjutkan akses ke halaman utama
         }
