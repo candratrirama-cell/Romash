@@ -3,71 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rtysafe - Main Dashboard</title>
+    <title>Rtysafe - Secure Dashboard</title>
     <style>
         :root {
-            --bg: #000;
+            --bg: #050505;
             --accent: #00ff41;
-            --text: #fff;
+            --text: #e0e0e0;
         }
         body {
             background-color: var(--bg);
             color: var(--text);
-            font-family: 'Courier New', Courier, monospace;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
-        .main-content {
-            display: none; /* Disembunyikan sampai verifikasi lolos */
-            border: 2px dashed var(--accent);
-            padding: 20px;
-            max-width: 800px;
-            margin: auto;
+        .dashboard {
+            display: none; /* Hidden by default */
+            border: 1px solid var(--accent);
+            background: #111;
+            padding: 40px;
+            border-radius: 4px;
+            max-width: 600px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
         }
-        .header { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; }
+        h2 { color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .info { background: #1a1a1a; padding: 15px; border-left: 4px solid var(--accent); margin-top: 20px; }
+        code { color: var(--accent); }
     </style>
 </head>
 <body>
 
-<div id="app" class="main-content">
-    <div class="header">
-        <h1>ACCESS GRANTED</h1>
-        <p>Sistem Rtysafe: Sesi Aktif</p>
+<div id="protected-content" class="dashboard">
+    <h2>Welcome to Rtysafe Dashboard</h2>
+    <p>Status: <span style="color: var(--accent);">● Encrypted Session Active</span></p>
+    
+    <div class="info">
+        <strong>Keamanan Sesi:</strong>
+        <p>Halaman ini hanya bisa diakses melalui jalur verifikasi resmi. Token Anda telah divalidasi dan dihapus dari URL untuk mencegah <i>session hijacking</i>.</p>
     </div>
-    <section>
-        <p>Selamat datang di halaman utama yang aman.</p>
-        <ul>
-            <li>Token anda hanya berlaku di tab ini.</li>
-            <li>Jika anda menyalin URL ini ke tab baru, akses akan ditolak.</li>
-            <li>Menyegarkan halaman (F5) tetap diizinkan selama sesi tersimpan.</li>
-        </ul>
-    </section>
+
+    <p style="margin-top: 20px; font-size: 0.9rem; color: #888;">
+        Membuka URL ini di tab baru akan memicu verifikasi ulang secara otomatis.
+    </p>
 </div>
 
 <script>
-    function validateSession() {
+    function validateRtysafe() {
         const urlParams = new URLSearchParams(window.location.search);
         const urlToken = urlParams.get('token');
-        const sessionToken = sessionStorage.getItem('rtysafe_token');
+        const sessionToken = sessionStorage.getItem('rtysafe_session_token');
 
-        // Cek apakah token ada di URL dan cocok dengan storage
+        // LOGIKA VALIDASI
         if (urlToken && urlToken === sessionToken) {
-            // Token Valid
-            document.getElementById('app').style.display = 'block';
-            
-            // Bersihkan token dari URL tanpa reload untuk keamanan tambahan
+            // Berhasil Masuk Pertama Kali
+            showContent();
+            // Hapus token dari URL agar bersih
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            window.history.replaceState({path: cleanUrl}, '', cleanUrl);
-        } else if (sessionToken && !urlToken) {
-            // Token sudah pernah diverifikasi (User F5 halaman)
-            document.getElementById('app').style.display = 'block';
-        } else {
-            // Token tidak valid atau tidak ada (Akses Ilegal / Tab Baru)
-            alert("Sesi tidak valid atau telah berakhir. Harap verifikasi ulang.");
+            window.history.replaceState({}, document.title, cleanUrl);
+        } 
+        else if (sessionToken && !urlToken) {
+            // Pengguna me-refresh halaman (F5), akses tetap diizinkan
+            showContent();
+        } 
+        else {
+            // Token salah, tidak ada, atau dibuka di tab baru (SessionStorage kosong di tab baru)
+            alert("Security Alert: Invalid Session.");
             window.location.href = 'verify.html';
         }
     }
 
-    window.onload = validateSession;
+    function showContent() {
+        document.getElementById('protected-content').style.display = 'block';
+    }
+
+    // Jalankan validasi saat halaman dimuat
+    window.onload = validateRtysafe;
 </script>
 </body>
 </html>
