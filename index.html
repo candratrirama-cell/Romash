@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Secure</title>
+</head>
+<body>
+    <h2>Welcome to the Homepage</h2>
+    <p>If you can see this page, you have successfully verified!</p>
+
+    <script>
+        // Cek apakah pengguna sudah diverifikasi
+        if (!localStorage.getItem('verified')) {
+            // Kalau belum diverifikasi, arahkan ke halaman verifikasi
+            window.location.href = 'verify.html';
+        } else {
+            console.log('User is verified.');
+            // Disini bisa lanjutkan akses ke halaman utama
+        }
+    </script>
+</body>
+</html>
