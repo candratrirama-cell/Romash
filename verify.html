@@ -2,106 +2,53 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rtysafe | Security Gateway</title>
+    <title>Rtysafe | Verification</title>
     <style>
-        :root { --bg: #00e5ff; --accent: #ff0055; --border: #000; }
-        body {
-            background-color: var(--bg);
-            font-family: 'Arial Black', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .rtysafe-box {
-            background: white;
-            border: 4px solid var(--border);
-            padding: 30px;
-            box-shadow: 12px 12px 0px var(--border);
-            text-align: center;
-            max-width: 350px;
-            width: 100%;
-        }
-        h1 { text-transform: uppercase; font-size: 1.8rem; margin: 0; border-bottom: 4px solid #000; padding-bottom: 10px; }
-        .status-text { margin: 20px 0; font-size: 1rem; }
-        #timer { font-size: 2.5rem; color: var(--accent); }
-        
-        /* Gaya CAPTCHA */
-        #captcha-area { display: none; margin-top: 20px; border-top: 3px dashed #000; pt-15; }
-        #captcha-code { background: #eee; font-size: 1.5rem; letter-spacing: 5px; padding: 10px; border: 2px solid #000; display: inline-block; margin-bottom: 10px; }
-        input { width: 80%; padding: 10px; border: 3px solid #000; font-weight: bold; font-size: 1rem; outline: none; }
-        .btn-check { background: var(--accent); color: white; border: 3px solid #000; padding: 10px; cursor: pointer; margin-top: 10px; font-weight: 900; }
+        body { background: #00e5ff; font-family: 'Arial Black', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; border: 4px solid #000; padding: 30px; box-shadow: 10px 10px 0px #000; text-align: center; width: 320px; }
+        #timer { font-size: 3rem; margin: 20px 0; color: #ff0055; }
+        #captcha { display: none; }
+        input { width: 85%; padding: 10px; border: 3px solid #000; margin-bottom: 10px; font-weight: bold; text-align: center; }
+        button { background: #00ff41; border: 3px solid #000; padding: 10px 20px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-
-<div class="rtysafe-box">
-    <h1>Rtysafe 🛡️</h1>
-    <div id="main-logic">
-        <p class="status-text">Memeriksa koneksi aman...</p>
-        <div id="timer">7</div>
-        <p style="font-size: 0.8rem;">Mohon tunggu sebentar.</p>
+    <div class="card">
+        <h2 style="margin:0">Rtysafe 🛡️</h2>
+        <div id="loading">
+            <p>Memeriksa Keamanan...</p>
+            <div id="timer">7</div>
+        </div>
+        <div id="captcha">
+            <p>Verifikasi Manual:</p>
+            <div id="code-box" style="background:#eee; padding:10px; border:2px dashed #000; margin-bottom:10px; font-size:1.2rem; letter-spacing:5px;"></div>
+            <input type="text" id="user-input" placeholder="Ketik kode di atas">
+            <button onclick="validate()">VERIFIKASI</button>
+        </div>
     </div>
-
-    <div id="captcha-area">
-        <p>Verifikasi Tambahan Diperlukan:</p>
-        <div id="captcha-code">RT-88X</div><br>
-        <input type="text" id="captcha-input" placeholder="Ketik kode di atas...">
-        <button class="btn-check" onclick="validateCaptcha()">VERIFIKASI</button>
-    </div>
-</div>
-
-<script>
-    let timeLeft = 7;
-    let timerElement = document.getElementById('timer');
-    let isSuspicious = false; // Ganti jadi TRUE untuk tes paksa CAPTCHA
-
-    const countdown = setInterval(() => {
-        timeLeft--;
-        timerElement.innerText = timeLeft;
-
-        if (timeLeft <= 0) {
-            clearInterval(countdown);
-            checkSafety();
+    <script>
+        let s = 7;
+        let t = setInterval(() => {
+            s--; document.getElementById('timer').innerText = s;
+            if(s <= 0) {
+                clearInterval(t);
+                if(Math.random() > 0.4) { // Pemicu otomatis CAPTCHA
+                    document.getElementById('loading').style.display='none';
+                    document.getElementById('captcha').style.display='block';
+                    window.c = Math.random().toString(36).substring(2,7).toUpperCase();
+                    document.getElementById('code-box').innerText = window.c;
+                } else { finish(); }
+            }
+        }, 1000);
+        function validate() {
+            if(document.getElementById('user-input').value.toUpperCase() === window.c) { finish(); }
+            else { alert('Salah!'); location.reload(); }
         }
-    }, 1000);
-
-    function checkSafety() {
-        if (isSuspicious) {
-            showCaptcha();
-        } else {
-            grantAccess();
+        function finish() {
+            const tk = "RTY-" + Math.random().toString(36).substring(2);
+            sessionStorage.setItem('rtysafe_session', tk);
+            location.href = "index.html?token=" + tk;
         }
-    }
-
-    function showCaptcha() {
-        document.getElementById('main-logic').style.display = 'none';
-        document.getElementById('captcha-area').style.display = 'block';
-        // Generate kode random sederhana
-        const code = Math.random().toString(36).substring(2, 7).toUpperCase();
-        document.getElementById('captcha-code').innerText = code;
-    }
-
-    function validateCaptcha() {
-        const input = document.getElementById('captcha-input').value.toUpperCase();
-        const code = document.getElementById('captcha-code').innerText;
-        
-        if (input === code) {
-            grantAccess();
-        } else {
-            alert("Kode salah! Coba lagi.");
-            showCaptcha();
-        }
-    }
-
-    function grantAccess() {
-        const token = "RTY-" + Math.random().toString(36).substring(2, 15);
-        sessionStorage.setItem('rtysafe_session', token);
-        window.location.href = `index.html?token=${token}`;
-    }
-</script>
-
+    </script>
 </body>
 </html>
