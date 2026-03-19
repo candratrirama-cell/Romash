@@ -3,29 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - Secure</title>
+    <title>Verify - CAPTCHA</title>
 </head>
 <body>
-    <h2>Welcome to the Homepage</h2>
-    <p>If you can see this page, you have successfully verified!</p>
+    <h2>Verify You Are Human</h2>
+    <p>We need to ensure that you're not a bot.</p>
+
+    <!-- CAPTCHA akan muncul jika IP dianggap mencurigakan -->
+    <div id="captchaSection" style="display: none;">
+        <p>Solve the CAPTCHA below to continue:</p>
+        <!-- CAPTCHA buatan sendiri -->
+        <label for="captcha">What is 5 + 3?</label>
+        <input type="number" id="captcha" required>
+        <button id="submitCaptcha">Verify</button>
+    </div>
+
+    <!-- Pesan jika tidak perlu CAPTCHA -->
+    <div id="noCaptchaMessage">
+        <p>Welcome, you're all set!</p>
+        <button id="continueButton">Proceed</button>
+    </div>
 
     <script>
-        // Cek token di URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+        // Fungsi untuk mendeteksi IP pengguna (gunakan API eksternal)
+        function detectIP() {
+            fetch('https://ipinfo.io/json?token=YOUR_API_KEY') // Ganti dengan API key Anda
+                .then(response => response.json())
+                .then(data => {
+                    const ip = data.ip;
+                    console.log("User's IP:", ip);
 
-        if (!token) {
-            // Kalau tidak ada token di URL, redirect ke halaman verifikasi (verify.html)
-            window.location.href = 'verify.html';
-        } else {
-            // Token ditemukan, proses validasi token (misalnya cek di session atau database)
-
-            // Hapus token dari URL setelah digunakan (menghindari penggunaan kembali token)
-            history.replaceState(null, null, window.location.pathname);  // Menghapus query string (token) dari URL
-
-            console.log('Valid token:', token);
-            // Disini bisa lanjutkan akses ke halaman utama
+                    // Periksa apakah IP mencurigakan (contoh: jika berasal dari negara tertentu atau daftar hitam)
+                    if (data.country === 'US' || isSuspiciousIP(ip)) {
+                        console.log('Suspicious IP detected. Showing CAPTCHA.');
+                        showCaptcha();
+                    } else {
+                        console.log('Safe IP detected. Proceeding without CAPTCHA.');
+                        showNoCaptchaMessage();
+                    }
+                })
+                .catch(error => console.error('Error detecting IP:', error));
         }
+
+        // Fungsi untuk menampilkan CAPTCHA
+        function showCaptcha() {
+            document.getElementById('captchaSection').style.display = 'block';
+            document.getElementById('noCaptchaMessage').style.display = 'none';
+
+            document.getElementById('submitCaptcha').addEventListener('click', function() {
+                const captchaInput = document.getElementById('captcha').value;
+                if (captchaInput == '8') { // 5 + 3 = 8
+                    const token = generateToken();
+                    window.location.href = `index.html?token=${token}`;  // Arahkan ke index.html dengan token di URL
+                } else {
+                    alert('Incorrect CAPTCHA. Try again.');
+                }
+            });
+        }
+
+        // Fungsi untuk menampilkan pesan tanpa CAPTCHA
+        function showNoCaptchaMessage() {
+            document.getElementById('noCaptchaMessage').style.display = 'block';
+            document.getElementById('captchaSection').style.display = 'none';
+
+            document.getElementById('continueButton').addEventListener('click', function() {
+                const token = generateToken();
+                window.location.href = `index.html?token=${token}`;  // Arahkan ke index.html dengan token di URL
+            });
+        }
+
+        // Fungsi untuk menghasilkan token unik
+        function generateToken() {
+            return 'token-' + Date.now();  // Menggunakan timestamp untuk membuat token unik
+        }
+
+        // Cek apakah IP dianggap mencurigakan
+        function isSuspiciousIP(ip) {
+            // Misalnya, kalau IP berasal dari daftar hitam atau negara tertentu
+            const suspiciousIPs = ['192.168.1.1'];  // IP yang dikenal mencurigakan
+            return suspiciousIPs.includes(ip);
+        }
+
+        // Jalankan deteksi IP saat halaman dimuat
+        detectIP();
     </script>
 </body>
 </html>
