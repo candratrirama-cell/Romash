@@ -2,53 +2,139 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Rtysafe | Verification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rtysafe - Verification</title>
     <style>
-        body { background: #00e5ff; font-family: 'Arial Black', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; border: 4px solid #000; padding: 30px; box-shadow: 10px 10px 0px #000; text-align: center; width: 320px; }
-        #timer { font-size: 3rem; margin: 20px 0; color: #ff0055; }
-        #captcha { display: none; }
-        input { width: 85%; padding: 10px; border: 3px solid #000; margin-bottom: 10px; font-weight: bold; text-align: center; }
-        button { background: #00ff41; border: 3px solid #000; padding: 10px 20px; font-weight: bold; cursor: pointer; }
+        :root {
+            --bg: #000;
+            --accent: #00ff41; /* Neon Green */
+            --text: #fff;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            border: 3px solid var(--accent);
+            padding: 2rem;
+            box-shadow: 8px 8px 0px var(--accent);
+            text-align: center;
+            max-width: 400px;
+            background: #111;
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 1rem; text-transform: uppercase; }
+        .status { margin-bottom: 20px; color: var(--accent); }
+        .loader {
+            height: 4px;
+            width: 100%;
+            background: #222;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .progress {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.5s linear;
+        }
+        #captcha-box { display: none; margin-top: 15px; }
+        input {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            padding: 8px;
+            width: 80px;
+            text-align: center;
+            outline: none;
+        }
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2 style="margin:0">Rtysafe 🛡️</h2>
-        <div id="loading">
-            <p>Memeriksa Keamanan...</p>
-            <div id="timer">7</div>
-        </div>
-        <div id="captcha">
-            <p>Verifikasi Manual:</p>
-            <div id="code-box" style="background:#eee; padding:10px; border:2px dashed #000; margin-bottom:10px; font-size:1.2rem; letter-spacing:5px;"></div>
-            <input type="text" id="user-input" placeholder="Ketik kode di atas">
-            <button onclick="validate()">VERIFIKASI</button>
-        </div>
+
+<div class="container">
+    <h1>Rtysafe System</h1>
+    <div id="status" class="status">Memeriksa keamanan koneksi...</div>
+    <div class="loader"><div id="progress" class="progress"></div></div>
+    
+    <div id="captcha-box">
+        <p>Aktivitas mencurigakan terdeteksi. Selesaikan tantangan ini:</p>
+        <p id="captcha-text" style="font-weight: bold; font-size: 1.2rem;"></p>
+        <input type="number" id="captcha-input" placeholder="?">
+        <button onclick="verifyCaptcha()">Verifikasi</button>
     </div>
-    <script>
-        let s = 7;
-        let t = setInterval(() => {
-            s--; document.getElementById('timer').innerText = s;
-            if(s <= 0) {
-                clearInterval(t);
-                if(Math.random() > 0.4) { // Pemicu otomatis CAPTCHA
-                    document.getElementById('loading').style.display='none';
-                    document.getElementById('captcha').style.display='block';
-                    window.c = Math.random().toString(36).substring(2,7).toUpperCase();
-                    document.getElementById('code-box').innerText = window.c;
-                } else { finish(); }
+</div>
+
+<script>
+    const statusText = document.getElementById('status');
+    const progressBar = document.getElementById('progress');
+    const captchaBox = document.getElementById('captcha-box');
+    let progress = 0;
+    let isSuspicious = Math.random() > 0.7; // 30% kemungkinan muncul captcha
+
+    function generateToken(length) {
+        return Math.random().toString(36).substring(2, 2 + length) + Date.now().toString(36);
+    }
+
+    function startProcess() {
+        const interval = setInterval(() => {
+            progress += 1.43; // Menuju 100% dalam ~7 detik
+            progressBar.style.width = progress + "%";
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                if (isSuspicious) {
+                    showCaptcha();
+                } else {
+                    completeVerification();
+                }
             }
+        }, 100);
+    }
+
+    function showCaptcha() {
+        statusText.innerText = "Tantangan Diperlukan";
+        captchaBox.style.display = "block";
+        window.num1 = Math.floor(Math.random() * 10) + 1;
+        window.num2 = Math.floor(Math.random() * 10) + 1;
+        document.getElementById('captcha-text').innerText = `${window.num1} + ${window.num2} = ?`;
+    }
+
+    function verifyCaptcha() {
+        const val = parseInt(document.getElementById('captcha-input').value);
+        if (val === (window.num1 + window.num2)) {
+            completeVerification();
+        } else {
+            alert("Jawaban salah, coba lagi.");
+            showCaptcha();
+        }
+    }
+
+    function completeVerification() {
+        const token = generateToken(10);
+        sessionStorage.setItem('rtysafe_token', token);
+        statusText.innerText = "Verifikasi Berhasil! Mengalihkan...";
+        setTimeout(() => {
+            window.location.href = `index.html?token=${token}`;
         }, 1000);
-        function validate() {
-            if(document.getElementById('user-input').value.toUpperCase() === window.c) { finish(); }
-            else { alert('Salah!'); location.reload(); }
-        }
-        function finish() {
-            const tk = "RTY-" + Math.random().toString(36).substring(2);
-            sessionStorage.setItem('rtysafe_session', tk);
-            location.href = "index.html?token=" + tk;
-        }
-    </script>
+    }
+
+    window.onload = startProcess;
+</script>
 </body>
 </html>
