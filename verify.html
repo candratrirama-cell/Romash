@@ -1,91 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify - CAPTCHA</title>
+    <title>Rtysafe | Security Gateway</title>
+    <style>
+        :root { --bg: #00e5ff; --accent: #ff0055; --border: #000; }
+        body {
+            background-color: var(--bg);
+            font-family: 'Arial Black', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .rtysafe-box {
+            background: white;
+            border: 4px solid var(--border);
+            padding: 30px;
+            box-shadow: 12px 12px 0px var(--border);
+            text-align: center;
+            max-width: 350px;
+            width: 100%;
+        }
+        h1 { text-transform: uppercase; font-size: 1.8rem; margin: 0; border-bottom: 4px solid #000; padding-bottom: 10px; }
+        .status-text { margin: 20px 0; font-size: 1rem; }
+        #timer { font-size: 2.5rem; color: var(--accent); }
+        
+        /* Gaya CAPTCHA */
+        #captcha-area { display: none; margin-top: 20px; border-top: 3px dashed #000; pt-15; }
+        #captcha-code { background: #eee; font-size: 1.5rem; letter-spacing: 5px; padding: 10px; border: 2px solid #000; display: inline-block; margin-bottom: 10px; }
+        input { width: 80%; padding: 10px; border: 3px solid #000; font-weight: bold; font-size: 1rem; outline: none; }
+        .btn-check { background: var(--accent); color: white; border: 3px solid #000; padding: 10px; cursor: pointer; margin-top: 10px; font-weight: 900; }
+    </style>
 </head>
 <body>
-    <h2>Verify You Are Human</h2>
-    <p>We need to ensure that you're not a bot.</p>
 
-    <!-- CAPTCHA akan muncul jika IP dianggap mencurigakan -->
-    <div id="captchaSection" style="display: none;">
-        <p>Solve the CAPTCHA below to continue:</p>
-        <!-- CAPTCHA buatan sendiri -->
-        <label for="captcha">What is 5 + 3?</label>
-        <input type="number" id="captcha" required>
-        <button id="submitCaptcha">Verify</button>
+<div class="rtysafe-box">
+    <h1>Rtysafe 🛡️</h1>
+    <div id="main-logic">
+        <p class="status-text">Memeriksa koneksi aman...</p>
+        <div id="timer">7</div>
+        <p style="font-size: 0.8rem;">Mohon tunggu sebentar.</p>
     </div>
 
-    <!-- Pesan jika tidak perlu CAPTCHA -->
-    <div id="noCaptchaMessage">
-        <p>Welcome, you're all set!</p>
-        <button id="continueButton">Proceed</button>
+    <div id="captcha-area">
+        <p>Verifikasi Tambahan Diperlukan:</p>
+        <div id="captcha-code">RT-88X</div><br>
+        <input type="text" id="captcha-input" placeholder="Ketik kode di atas...">
+        <button class="btn-check" onclick="validateCaptcha()">VERIFIKASI</button>
     </div>
+</div>
 
-    <script>
-        // Fungsi untuk mendeteksi IP pengguna (gunakan API eksternal)
-        function detectIP() {
-            fetch('https://ipinfo.io/json?token=YOUR_API_KEY') // Ganti dengan API key Anda
-                .then(response => response.json())
-                .then(data => {
-                    const ip = data.ip;
-                    console.log("User's IP:", ip);
+<script>
+    let timeLeft = 7;
+    let timerElement = document.getElementById('timer');
+    let isSuspicious = false; // Ganti jadi TRUE untuk tes paksa CAPTCHA
 
-                    // Periksa apakah IP mencurigakan (contoh: jika berasal dari negara tertentu atau daftar hitam)
-                    if (data.country === 'US' || isSuspiciousIP(ip)) {
-                        console.log('Suspicious IP detected. Showing CAPTCHA.');
-                        showCaptcha();
-                    } else {
-                        console.log('Safe IP detected. Proceeding without CAPTCHA.');
-                        showNoCaptchaMessage();
-                    }
-                })
-                .catch(error => console.error('Error detecting IP:', error));
+    const countdown = setInterval(() => {
+        timeLeft--;
+        timerElement.innerText = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            checkSafety();
         }
+    }, 1000);
 
-        // Fungsi untuk menampilkan CAPTCHA
-        function showCaptcha() {
-            document.getElementById('captchaSection').style.display = 'block';
-            document.getElementById('noCaptchaMessage').style.display = 'none';
-
-            document.getElementById('submitCaptcha').addEventListener('click', function() {
-                const captchaInput = document.getElementById('captcha').value;
-                if (captchaInput == '8') { // 5 + 3 = 8
-                    const token = generateToken();
-                    window.location.href = `index.html?token=${token}`;  // Arahkan ke index.html dengan token di URL
-                } else {
-                    alert('Incorrect CAPTCHA. Try again.');
-                }
-            });
+    function checkSafety() {
+        if (isSuspicious) {
+            showCaptcha();
+        } else {
+            grantAccess();
         }
+    }
 
-        // Fungsi untuk menampilkan pesan tanpa CAPTCHA
-        function showNoCaptchaMessage() {
-            document.getElementById('noCaptchaMessage').style.display = 'block';
-            document.getElementById('captchaSection').style.display = 'none';
+    function showCaptcha() {
+        document.getElementById('main-logic').style.display = 'none';
+        document.getElementById('captcha-area').style.display = 'block';
+        // Generate kode random sederhana
+        const code = Math.random().toString(36).substring(2, 7).toUpperCase();
+        document.getElementById('captcha-code').innerText = code;
+    }
 
-            document.getElementById('continueButton').addEventListener('click', function() {
-                const token = generateToken();
-                window.location.href = `index.html?token=${token}`;  // Arahkan ke index.html dengan token di URL
-            });
+    function validateCaptcha() {
+        const input = document.getElementById('captcha-input').value.toUpperCase();
+        const code = document.getElementById('captcha-code').innerText;
+        
+        if (input === code) {
+            grantAccess();
+        } else {
+            alert("Kode salah! Coba lagi.");
+            showCaptcha();
         }
+    }
 
-        // Fungsi untuk menghasilkan token unik
-        function generateToken() {
-            return 'token-' + Date.now();  // Menggunakan timestamp untuk membuat token unik
-        }
+    function grantAccess() {
+        const token = "RTY-" + Math.random().toString(36).substring(2, 15);
+        sessionStorage.setItem('rtysafe_session', token);
+        window.location.href = `index.html?token=${token}`;
+    }
+</script>
 
-        // Cek apakah IP dianggap mencurigakan
-        function isSuspiciousIP(ip) {
-            // Misalnya, kalau IP berasal dari daftar hitam atau negara tertentu
-            const suspiciousIPs = ['192.168.1.1'];  // IP yang dikenal mencurigakan
-            return suspiciousIPs.includes(ip);
-        }
-
-        // Jalankan deteksi IP saat halaman dimuat
-        detectIP();
-    </script>
 </body>
 </html>
