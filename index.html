@@ -1,169 +1,73 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <script>
-    (function() {
-        const urlTk = new URLSearchParams(window.location.search).get('token');
-        const ssTk = sessionStorage.getItem('rtysafe_session');
-        if (urlTk && urlTk === ssTk) {
-            window.history.replaceState(null, "", window.location.pathname);
-        } else if (!ssTk) {
-            window.location.href = "verify.html";
-        }
-    })();
-    </script>
-    <style>html { visibility: hidden; }</style>
-    <script>
-        window.onload = function() { document.documentElement.style.visibility = 'visible'; }
-    </script>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Followers - PT Bangga Karya</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <title>Rtysafe - Main Dashboard</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: #1e1e1e; padding: 30px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); width: 100%; max-width: 350px; text-align: center; border: 1px solid #333; position: relative; }
-        .server-status { position: absolute; top: 15px; right: 15px; font-size: 11px; display: flex; align-items: center; gap: 5px; }
-        .dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; }
-        .dot-on { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
-        .dot-off { background-color: #dc3545; box-shadow: 0 0 8px #dc3545; }
-        h2 { color: #fe2c55; margin-bottom: 5px; }
-        .rule-box { background: rgba(254, 44, 85, 0.1); border: 1px solid #fe2c55; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; color: #ff8fa3; }
-        .info-text { color: #aaa; font-size: 14px; margin-bottom: 15px; }
-        .highlight { color: #00f2ea; font-weight: bold; }
-        .antrian-badge { background: #333; padding: 10px; border-radius: 10px; margin: 10px 0; border: 1px solid #444; }
-        .nomor-urut { font-size: 24px; color: #00f2ea; font-weight: bold; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: white; box-sizing: border-box; outline: none; text-align: center; }
-        button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #fe2c55; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        button:disabled { background: #444 !important; cursor: not-allowed; }
-        .status-box { margin-top: 20px; padding: 15px; background: #2a2a2a; border-radius: 8px; display: none; text-align: left; }
-        .footer-text { margin-top: 20px; font-size: 11px; color: #666; font-style: italic; }
+        :root {
+            --bg: #000;
+            --accent: #00ff41;
+            --text: #fff;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+        }
+        .main-content {
+            display: none; /* Disembunyikan sampai verifikasi lolos */
+            border: 2px dashed var(--accent);
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+        .header { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="server-status">
-        <span id="status-dot" class="dot dot-off"></span>
-        <span id="status-text">Checking...</span>
+<div id="app" class="main-content">
+    <div class="header">
+        <h1>ACCESS GRANTED</h1>
+        <p>Sistem Rtysafe: Sesi Aktif</p>
     </div>
-
-    <h2>TikTok Followers</h2>
-    <div class="rule-box">
-        <b>WAJIB FOLLOW:</b><br>
-        <a href="https://tiktok.com/@maramadhona" target="_blank" style="color:white; text-decoration:none;">@maramadhona</a>
-    </div>
-    
-    <p class="info-text">Followers masuk: <span class="highlight">0 - 50 Random</span></p>
-
-    <div id="form-area">
-        <input type="text" id="tiktok_user" placeholder="@username_anda">
-        <button id="btn_submit" onclick="kirimData()">Tambah Sekarang</button>
-    </div>
-
-    <div id="status-area" class="status-box">
-        <div class="antrian-badge" id="box-antrian">
-            <div style="font-size: 12px; color: #888;">Antrian Saat Ini:</div>
-            <div class="nomor-urut" id="res_antrian">Menghitung...</div>
-        </div>
-        <p style="font-size: 14px;">ID: <span id="res_id" style="color:#fe2c55; font-family: monospace;"></span></p>
-        <p style="font-size: 14px;">Status: <span id="res_status" style="color:yellow; font-weight:bold;">Menunggu...</span></p>
-    </div>
-
-    <div class="footer-text">Project by : @maramadhona</div>
+    <section>
+        <p>Selamat datang di halaman utama yang aman.</p>
+        <ul>
+            <li>Token anda hanya berlaku di tab ini.</li>
+            <li>Jika anda menyalin URL ini ke tab baru, akses akan ditolak.</li>
+            <li>Menyegarkan halaman (F5) tetap diizinkan selama sesi tersimpan.</li>
+        </ul>
+    </section>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyCTvPUfC1xSlup78dtXfs0AFogOUheAi-E",
-        authDomain: "tikfoll.firebaseapp.com",
-        projectId: "tikfoll",
-        databaseURL: "https://tikfoll-default-rtdb.asia-southeast1.firebasedatabase.app/",
-        storageBucket: "tikfoll.firebasestorage.app",
-        messagingSenderId: "210219887620",
-        appId: "1:210219887620:web:ad7c29c37ff0f74f3ed951"
-    };
-    
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    function validateSession() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
+        const sessionToken = sessionStorage.getItem('rtysafe_token');
 
-    window.onload = function() {
-        const savedID = localStorage.getItem('order_foll_bk');
-        if(savedID) { tampilkanStatus(savedID); }
-    }
-
-    db.ref('system_status').on('value', (snapshot) => {
-        const isOff = snapshot.val() === 'OFF';
-        const dot = document.getElementById('status-dot');
-        const sText = document.getElementById('status-text');
-        dot.className = isOff ? "dot dot-off" : "dot dot-on";
-        sText.innerText = isOff ? "OFF" : "ON";
-        
-        if(!localStorage.getItem('order_foll_bk')) {
-            document.getElementById('tiktok_user').disabled = isOff;
-            document.getElementById('btn_submit').disabled = isOff;
-            if(isOff) document.getElementById('btn_submit').innerText = "SISTEM OFF";
-        }
-    });
-
-    function kirimData() {
-        const user = document.getElementById('tiktok_user').value;
-        if(!user || user.length < 3) return alert("Username tidak valid!");
-        
-        const orderId = 'BK-' + Math.floor(Math.random() * 8999 + 1000);
-        const timestamp = Date.now();
-        
-        db.ref('orders/' + orderId).set({ 
-            username: user, 
-            status: 'Dalam Antrian',
-            time: timestamp 
-        }).then(() => {
-            localStorage.setItem('order_foll_bk', orderId);
-            tampilkanStatus(orderId);
-        });
-    }
-
-    function tampilkanStatus(id) {
-        document.getElementById('form-area').style.display = 'none';
-        document.getElementById('status-area').style.display = 'block';
-        document.getElementById('res_id').innerText = id;
-        
-        db.ref('orders').on('value', (snapshot) => {
-            let allOrders = [];
-            let myOrder = null;
-
-            snapshot.forEach(child => {
-                const data = child.val();
-                if(data.status === 'Dalam Antrian') {
-                    allOrders.push({ id: child.key, time: data.time });
-                }
-                if(child.key === id) myOrder = data;
-            });
-
-            if(!myOrder) {
-                localStorage.removeItem('order_foll_bk');
-                location.reload();
-                return;
-            }
-
-            allOrders.sort((a, b) => a.time - b.time);
-            const myPos = allOrders.findIndex(x => x.id === id) + 1;
-
-            document.getElementById('res_status').innerText = myOrder.status;
+        // Cek apakah token ada di URL dan cocok dengan storage
+        if (urlToken && urlToken === sessionToken) {
+            // Token Valid
+            document.getElementById('app').style.display = 'block';
             
-            if(myOrder.status === 'Dalam Antrian') {
-                document.getElementById('res_antrian').innerText = "Ke-" + myPos;
-                document.getElementById('box-antrian').style.display = 'block';
-            } else {
-                document.getElementById('box-antrian').style.display = 'none';
-                if(myOrder.status === 'Berhasil') document.getElementById('res_status').style.color = '#00f2ea';
-                if(myOrder.status === 'Gagal') document.getElementById('res_status').style.color = '#ff4d4d';
-                if(myOrder.status === 'Dalam Proses') document.getElementById('res_status').style.color = 'orange';
-            }
-        });
+            // Bersihkan token dari URL tanpa reload untuk keamanan tambahan
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({path: cleanUrl}, '', cleanUrl);
+        } else if (sessionToken && !urlToken) {
+            // Token sudah pernah diverifikasi (User F5 halaman)
+            document.getElementById('app').style.display = 'block';
+        } else {
+            // Token tidak valid atau tidak ada (Akses Ilegal / Tab Baru)
+            alert("Sesi tidak valid atau telah berakhir. Harap verifikasi ulang.");
+            window.location.href = 'verify.html';
+        }
     }
+
+    window.onload = validateSession;
 </script>
 </body>
 </html>
