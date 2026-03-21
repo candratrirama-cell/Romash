@@ -26,43 +26,57 @@ export default async function handler(req, res) {
     try {
         let db = await getDb();
 
+        // --- REGISTER PARTNER ---
+        if (action === 'register') {
+            if (!username || !password) return res.json({ success: false, message: 'Lengkapi data!' });
+            if (db.partners.find(u => u.username === username)) return res.json({ success: false, message: 'Username sudah ada' });
+            
+            const randomStr = Math.random().toString(36).substring(2, 8);
+            const newKey = `xapik1${randomStr}${Date.now().toString().slice(-4)}`;
+            
+            db.partners.push({ username, password, apikey: newKey, balance: 0, history: [], mutasi: [] });
+            await updateDb(db);
+            return res.json({ success: true });
+        }
+
+        // --- LOGIN ---
         if (action === 'login') {
             const user = db.partners.find(u => u.username === username && u.password === password);
             if (!user) return res.json({ success: false });
             return res.json({ success: true, user });
         }
 
+        // --- TOP UP (ADMIN 10%) ---
         if (action === 'create_qris') {
             const user = db.partners.find(u => u.username === username);
-            if (!user) return res.json({ error: 'User Not Found' });
-            const nominal = parseInt(amount);
-            const totalBayar = Math.ceil((nominal + Math.floor(Math.random() * 200)) * 1.10);
+            const total = Math.ceil((parseInt(amount) + Math.floor(Math.random() * 200)) * 1.10);
             const rPay = await fetch('https://hokto.my.id/produksi/payment/?api=create_qris', {
                 method: 'POST',
                 headers: { 'X-API-KEY': PAYMENT_KEY, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount: totalBayar, partnerReferenceNo: "API-" + Date.now() })
+                body: JSON.stringify({ amount: total, partnerReferenceNo: "API-" + Date.now() })
             });
             const pRes = await rPay.json();
-            user.mutasi.push({ tgl: new Date().toLocaleString(), amt: nominal, status: 'Pending', bill: totalBayar });
+            user.mutasi.push({ tgl: new Date().toLocaleString(), amt: amount, status: 'Pending', bill: total });
             await updateDb(db);
-            return res.json({ success: true, total: totalBayar, qr: pRes.qrContent || pRes.data?.qrContent });
+            return res.json({ success: true, total, qr: pRes.qrContent || pRes.data?.qrContent });
         }
 
+        // --- ORDER SMM (PROFIT 15%) ---
         const apiKey = key || req.headers['x-api-key'];
-        if (action === 'add' && store === 'smm' && apiKey && apiKey.startsWith('xapik1')) {
+        if (action === 'add' && store === 'smm' && apiKey?.startsWith('xapik1')) {
             const user = db.partners.find(u => u.apikey === apiKey);
             if (!user) return res.json({ error: 'Key Invalid' });
             const rSvc = await fetch('https://hokto.my.id/produksi/smm/', { method: 'POST', body: new URLSearchParams({ key: SMM_KEY, action: 'services' }) });
             const svcs = await rSvc.json();
-            const targetSvc = svcs.find(s => s.service == service);
-            const hargaJual = Math.ceil(((parseFloat(targetSvc.rate) / 1000) * qty) * 1.15);
-            if (user.balance < hargaJual) return res.json({ error: 'Saldo Kurang' });
+            const target = svcs.find(s => s.service == service);
+            const harga = Math.ceil(((parseFloat(target.rate) / 1000) * qty) * 1.15);
+            if (user.balance < harga) return res.json({ error: 'Saldo Kurang' });
             const smmRes = await fetch('https://hokto.my.id/produksi/smm/', {
                 method: 'POST', body: new URLSearchParams({ key: SMM_KEY, action: 'add', service, link, quantity: qty })
             }).then(r => r.json());
             if (smmRes.order) {
-                user.balance -= hargaJual;
-                user.history.push({ id: smmRes.order, svc: targetSvc.name, price: hargaJual, date: new Date().toLocaleString() });
+                user.balance -= harga;
+                user.history.push({ id: smmRes.order, svc: target.name, price: harga, date: new Date().toLocaleString() });
                 await updateDb(db);
                 return res.json({ status: true, order_id: smmRes.order, sisa: user.balance });
             }
