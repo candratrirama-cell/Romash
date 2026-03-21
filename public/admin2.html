@@ -2,93 +2,88 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>GoR 1.1 - Owner Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoR 1.1 - Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #020617; color: #fff; font-family: monospace; }
-        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 15px; padding: 20px; }
+        body { background: #020617; color: #f8fafc; font-family: 'Courier New', monospace; }
+        .glass { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; }
+        .btn-accept { background: #10b981; color: #000; padding: 5px 10px; border-radius: 8px; font-weight: 900; font-size: 10px; cursor: pointer; }
+        .btn-reject { background: #ef4444; color: #fff; padding: 5px 10px; border-radius: 8px; font-weight: 900; font-size: 10px; cursor: pointer; }
     </style>
 </head>
 <body class="p-6">
-    <div class="max-w-5xl mx-auto space-y-8">
-        <h1 class="text-2xl font-black italic text-emerald-500 underline">OWNER CONTROL CENTER</h1>
-
-        <div class="card border-yellow-500/30">
-            <h2 class="text-xs font-black mb-4 text-yellow-500 uppercase">⚡ Menunggu Persetujuan Deposit</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-[10px] text-left">
-                    <thead class="opacity-40 border-b border-slate-800">
-                        <tr>
-                            <th class="p-2">User</th>
-                            <th class="p-2">Nominal</th>
-                            <th class="p-2">Total Bayar</th>
-                            <th class="p-2">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="depoTable">
-                        </tbody>
-                </table>
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-10 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black italic text-emerald-500 uppercase tracking-tighter underline">Admin Control GoR 1.1</h1>
+                <p class="text-[10px] opacity-40 uppercase">Manajemen Antrian Deposit</p>
             </div>
-        </div>
+            <button onclick="loadPending()" class="bg-blue-600 px-4 py-2 rounded-full text-[10px] font-bold">REFRESH DATA</button>
+        </header>
 
-        <div class="card">
-            <h2 class="text-xs font-black mb-4 text-emerald-500 uppercase">👥 Daftar Partner & Saldo</h2>
-            <div id="partnerList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div class="glass p-6">
+            <h2 class="text-xs font-bold uppercase mb-4 opacity-50 italic">Antrian Deposit Pending:</h2>
+            <div id="listPending" class="space-y-4">
+                <p class="text-[10px] opacity-30 italic text-center py-10">Mencari antrian...</p>
+            </div>
         </div>
     </div>
 
     <script>
-        async function loadAdmin() {
-            const r = await fetch('/api/v1?action=login&username=admin&password=123').then(res=>res.json()); // Simulasi ambil DB
-            const db = await fetch('https://api.jsonbin.io/v3/b/69be7bc1c3097a1dd54655de/latest', {
-                headers: { 'X-Master-Key': '$2a$10$go25lr52o.r3GKWOrNSUiO6Gdv52kcAcNS56vMiiIhlM5yX3X2ON6' }
-            }).then(res=>res.json());
+        // Fungsi untuk ambil semua data deposit yang statusnya Pending
+        async function loadPending() {
+            const list = document.getElementById('listPending');
+            list.innerHTML = '<p class="text-[10px] opacity-30 italic text-center py-10">Sedang sinkronisasi...</p>';
             
-            const partners = db.record.partners;
-            
-            // Render Tabel Deposit Pending
-            let depoHtml = '';
-            partners.forEach(u => {
-                u.mutasi.forEach((m, idx) => {
-                    if(m.status === 'Pending') {
-                        depoHtml += `
-                        <tr class="border-b border-slate-800/50">
-                            <td class="p-2 font-bold">${u.username}</td>
-                            <td class="p-2 text-emerald-400">Rp ${m.amt.toLocaleString()}</td>
-                            <td class="p-2 text-white">Rp ${m.bill.toLocaleString()}</td>
-                            <td class="p-2 flex gap-2">
-                                <button onclick="actDepo('${u.username}', ${m.amt}, ${idx}, 'Success')" class="bg-emerald-600 px-2 py-1 rounded font-bold text-[8px]">TERIMA</button>
-                                <button onclick="actDepo('${u.username}', 0, ${idx}, 'Rejected')" class="bg-red-600 px-2 py-1 rounded font-bold text-[8px]">TOLAK</button>
-                            </td>
-                        </tr>`;
-                    }
-                });
-            });
-            document.getElementById('depoTable').innerHTML = depoHtml || '<tr><td colspan="4" class="p-4 text-center opacity-30 italic">Tidak ada deposit tertunda</td></tr>';
+            try {
+                // Pastikan action 'get_all_depo' sudah ada di v1.js
+                const r = await fetch('/api/v1?action=get_all_depo').then(r => r.json());
+                
+                if (r.length === 0) {
+                    list.innerHTML = '<p class="text-[10px] opacity-30 italic text-center py-10">Tidak ada antrian deposit.</p>';
+                    return;
+                }
 
-            // Render List Partner
-            document.getElementById('partnerList').innerHTML = partners.map(p => `
-                <div class="bg-black/40 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
-                    <div>
-                        <p class="text-xs font-black text-emerald-500">${p.username}</p>
-                        <p class="text-[9px] opacity-40">${p.apikey}</p>
+                list.innerHTML = r.map(item => `
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <div>
+                            <p class="text-xs font-black text-emerald-400 uppercase">${item.username}</p>
+                            <p class="text-[10px] opacity-60">Nominal: <span class="text-white font-bold">Rp ${parseInt(item.amt).toLocaleString()}</span></p>
+                            <p class="text-[9px] opacity-40">Tagihan: Rp ${parseInt(item.bill).toLocaleString()} | ${item.tgl}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="prosesDepo('${item.username}', ${item.index}, 'Success')" class="btn-accept">TERIMA</button>
+                            <button onclick="prosesDepo('${item.username}', ${item.index}, 'Canceled')" class="btn-reject">TOLAK</button>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <p class="text-xs font-bold">Rp ${p.balance.toLocaleString()}</p>
-                        <p class="text-[8px] opacity-40">${p.history.length} Trx</p>
-                    </div>
-                </div>
-            `).join('');
+                `).join('');
+
+            } catch (e) {
+                list.innerHTML = '<p class="text-red-500 text-center py-10">Gagal terhubung ke API</p>';
+            }
         }
 
-        async function actDepo(user, amt, idx, status) {
-            if(!confirm(`Yakin ingin ${status} deposit ini?`)) return;
-            const res = await fetch(`/api/v1?action=confirm_depo&target_user=${user}&amount=${amt}&depo_idx=${idx}&status=${status}`).then(r=>r.json());
-            if(res.success) { alert("Berhasil diupdate!"); loadAdmin(); }
+        // Fungsi untuk Approve atau Reject
+        async function prosesDepo(user, idx, status) {
+            if(!confirm(`Konfirmasi ${status} untuk ${user}?`)) return;
+
+            try {
+                const r = await fetch(`/api/v1?action=confirm_depo&target_user=${user}&depo_idx=${idx}&status=${status}`).then(r => r.json());
+                
+                if(r.success) {
+                    alert(r.message);
+                    loadPending(); // Refresh list
+                } else {
+                    alert("Gagal: " + r.message);
+                }
+            } catch (e) {
+                alert("Koneksi Error");
+            }
         }
 
-        loadAdmin();
-        setInterval(loadAdmin, 10000); // Auto refresh tiap 10 detik
+        // Jalankan saat halaman dibuka
+        loadPending();
     </script>
 </body>
 </html>
