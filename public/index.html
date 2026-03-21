@@ -10,6 +10,7 @@
         .glass { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; }
         .nav-active { color: #10b981; border-bottom: 2px solid #10b981; opacity: 1 !important; }
         input { background: #020617; border: 1px solid #334155; padding: 12px; border-radius: 12px; width: 100%; color: #10b981; }
+        .svc-card:hover { border-color: #10b981; transform: translateY(-2px); transition: all 0.2s; }
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -32,50 +33,35 @@
         <nav class="flex gap-6 mb-8 border-b border-slate-800 overflow-x-auto pb-2">
             <button onclick="tab('dash')" id="t-dash" class="nav-active text-[10px] font-bold uppercase shrink-0">1. Dashboard</button>
             <button onclick="tab('top')" id="t-top" class="text-[10px] font-bold uppercase opacity-40 shrink-0">2. Isi Saldo</button>
-            <button onclick="tab('svc')" id="t-svc" class="text-[10px] font-bold uppercase opacity-40 shrink-0">3. Layanan</button>
-            <button onclick="tab('doc')" id="t-doc" class="text-[10px] font-bold uppercase opacity-40 shrink-0">4. Dokumentasi API</button>
+            <button onclick="tab('svc')" id="t-svc" class="text-[10px] font-bold uppercase opacity-40 shrink-0">3. Layanan SMM</button>
+            <button onclick="tab('doc')" id="t-doc" class="text-[10px] font-bold uppercase opacity-40 shrink-0">4. API Docs</button>
         </nav>
 
-        <main>
-            <section id="p-dash" class="space-y-4">
-                <div class="glass p-6"><p class="text-[10px] opacity-40 uppercase">Saldo API Anda</p><h2 id="bal" class="text-4xl font-black">Rp 0</h2></div>
-                <div class="glass p-6">
-                    <p class="text-[10px] opacity-40 uppercase mb-2">API Key Partner</p>
-                    <div class="bg-black p-4 rounded-xl flex justify-between items-center border border-emerald-900/30">
-                        <code id="apikey" class="text-[11px] text-emerald-400 font-bold">xapik1...</code>
-                        <button onclick="copy('apikey')" class="text-[9px] font-black uppercase text-white/50">Copy</button>
-                    </div>
-                </div>
-            </section>
+        <section id="p-dash" class="space-y-4">
+            <div class="glass p-6"><p class="text-[10px] opacity-40 uppercase">Saldo API Anda</p><h2 id="bal" class="text-4xl font-black">Rp 0</h2></div>
+            <div class="glass p-6"><p class="text-[10px] opacity-40 uppercase mb-2">API Key Partner</p><div class="bg-black p-4 rounded-xl flex justify-between items-center border border-emerald-900/30"><code id="apikey" class="text-[11px] text-emerald-400 font-bold">xapik1...</code><button onclick="copy('apikey')" class="text-[9px] font-black uppercase text-white/50">Copy</button></div></div>
+        </section>
 
-            <section id="p-top" class="hidden glass p-8 text-center space-y-6">
-                <h2 class="font-black">TOP UP (ADMIN 10%)</h2>
-                <input type="number" id="amt" placeholder="Nominal Saldo">
-                <button onclick="genQR()" class="w-full bg-emerald-600 p-4 rounded-xl font-black text-black">BUAT QRIS</button>
-                <div id="qrArea" class="flex flex-col items-center"></div>
-            </section>
+        <section id="p-top" class="hidden glass p-8 text-center space-y-6">
+            <h2 class="font-black">ISI SALDO (ADMIN 10%)</h2>
+            <input type="number" id="amt" placeholder="Nominal Saldo">
+            <button onclick="genQR()" class="w-full bg-emerald-600 p-4 rounded-xl font-black text-black">BUAT QRIS</button>
+            <div id="qrArea" class="flex flex-col items-center"></div>
+        </section>
 
-            <section id="p-svc" class="hidden glass p-6">
-                <div id="svcList" class="h-[400px] overflow-y-auto space-y-2 pr-2"></div>
-            </section>
+        <section id="p-svc" class="hidden space-y-4">
+            <div class="glass p-4"><input type="text" id="searchSvc" onkeyup="filterSvc()" placeholder="Cari layanan (Contoh: Instagram, TikTok)..."></div>
+            <div id="svcList" class="grid grid-cols-1 md:grid-cols-2 gap-4 h-[500px] overflow-y-auto pr-2"></div>
+        </section>
 
-            <section id="p-doc" class="hidden space-y-6">
-                <div class="glass p-6 border-l-4 border-emerald-500">
-                    <h3 class="font-black text-emerald-500 mb-2 uppercase">01. Endpoint Utama</h3>
-                    <code id="base" class="text-[10px] bg-black p-3 block rounded text-emerald-400 break-all">https://romash.vercel.app/api/v1?store=smm&key=API_KEY&action=add&service=ID&link=TARGET&qty=QTY</code>
-                </div>
-                <div class="glass p-6">
-                    <h3 class="font-black text-emerald-500 mb-2 uppercase">02. Contoh Integrasi (PHP)</h3>
-                    <pre class="bg-black p-4 rounded-xl text-[9px] text-blue-300 overflow-x-auto">$api = "https://romash.vercel.app/api/v1?store=smm&key=YOUR_KEY&action=add&service=1&link=URL&qty=100";
-$res = file_get_contents($api);
-echo $res;</pre>
-                </div>
-            </section>
-        </main>
+        <section id="p-doc" class="hidden space-y-6 glass p-6">
+            <h3 class="font-black text-emerald-500 uppercase">Endpoint Utama</h3>
+            <code class="text-[10px] bg-black p-3 block rounded text-emerald-400 break-all">https://romash.vercel.app/api/v1?store=smm&key=API_KEY&action=add&service=ID&link=TARGET&qty=QTY</code>
+        </section>
     </div>
 
     <script>
-        let session = JSON.parse(localStorage.getItem('pData'));
+        let session = JSON.parse(localStorage.getItem('pData')), allSvcs = [];
         if(session) { document.getElementById('authArea').classList.add('hidden'); document.getElementById('mainArea').classList.remove('hidden'); renderUI(); }
 
         function tabAuth(t) { ['login','reg'].forEach(x => { document.getElementById('f-'+x).classList.toggle('hidden', x!==t); document.getElementById('btn-'+x).classList.toggle('nav-active', x===t); document.getElementById('btn-'+x).classList.toggle('opacity-40', x!==t); }); }
@@ -85,16 +71,39 @@ echo $res;</pre>
         }
         async function doReg() {
             const r = await fetch(`/api/v1?action=register&username=${document.getElementById('ru').value}&password=${document.getElementById('rp').value}`).then(r=>r.json());
-            if(r.success) { alert("Berhasil! Silakan Login."); tabAuth('login'); } else alert("Gagal!");
+            if(r.success) { alert("Berhasil!"); tabAuth('login'); } else alert("Gagal!");
         }
         function tab(t) { ['dash','top','svc','doc'].forEach(x => { document.getElementById('p-'+x).classList.toggle('hidden', x!==t); document.getElementById('t-'+x).classList.toggle('nav-active', x===t); document.getElementById('t-'+x).classList.toggle('opacity-40', x!==t); }); if(t==='svc') loadSvc(); }
+
         async function loadSvc() {
-            const r = await fetch('/api/v1?action=services').then(r=>r.json());
-            document.getElementById('svcList').innerHTML = r.map(s => `<div class="bg-black/50 p-3 rounded-lg border border-slate-800 text-[10px] font-bold"><p class="text-emerald-400">ID ${s.service} - ${s.name}</p><p class="opacity-40 font-normal italic">Rate: Rp ${parseFloat(s.rate).toLocaleString()}</p></div>`).join('');
+            const list = document.getElementById('svcList');
+            list.innerHTML = '<p class="text-center opacity-30 mt-10 col-span-2">Loading Services...</p>';
+            allSvcs = await fetch('/api/v1?action=services').then(r=>r.json());
+            renderSvc(allSvcs);
         }
+
+        function renderSvc(data) {
+            document.getElementById('svcList').innerHTML = data.map(s => `
+                <div class="glass p-5 svc-card border-slate-800">
+                    <div class="flex justify-between mb-2"><span class="text-[8px] bg-emerald-900/30 text-emerald-400 px-2 py-1 rounded font-bold uppercase">${s.category}</span><span class="text-[9px] font-bold">ID: ${s.service}</span></div>
+                    <p class="text-[11px] font-bold text-slate-200 mb-3 leading-relaxed">${s.name}</p>
+                    <div class="flex justify-between items-end border-t border-slate-800/50 pt-3">
+                        <div><p class="text-[8px] opacity-40 uppercase">Price/1k</p><p class="text-xs font-black text-emerald-500">Rp ${parseFloat(s.rate).toLocaleString()}</p></div>
+                        <div class="text-right"><p class="text-[8px] opacity-40 uppercase">Min/Max</p><p class="text-[9px] font-bold">${s.min}/${s.max}</p></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterSvc() {
+            const val = document.getElementById('searchSvc').value.toLowerCase();
+            const filtered = allSvcs.filter(s => s.name.toLowerCase().includes(val) || s.category.toLowerCase().includes(val));
+            renderSvc(filtered);
+        }
+
         async function genQR() {
             const r = await fetch(`/api/v1?action=create_qris&amount=${document.getElementById('amt').value}&username=${session.username}`).then(r=>r.json());
-            if(r.qr) document.getElementById('qrArea').innerHTML = `<div class="bg-white p-2 rounded-xl mt-4"><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(r.qr)}" class="w-40 h-40"></div><p class="mt-2 font-black text-emerald-400">Total: Rp ${r.total.toLocaleString()}</p><button onclick="window.open('https://wa.me/62882008519349?text=Konfirmasi+Bayar+Rp+${r.total}', '_blank')" class="mt-4 bg-green-600 p-2 rounded text-[10px] font-bold">SUDAH BAYAR? KLIK DISINI</button>`;
+            if(r.qr) document.getElementById('qrArea').innerHTML = `<div class="bg-white p-2 rounded-xl mt-4"><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(r.qr)}" class="w-40 h-40"></div><p class="mt-2 font-black text-emerald-400">Total: Rp ${r.total.toLocaleString()}</p><button onclick="window.open('https://wa.me/62882008519349?text=Konfirmasi+Bayar+Rp+${r.total}', '_blank')" class="mt-4 bg-green-600 p-2 rounded text-[10px] font-bold text-black">KONFIRMASI WHATSAPP</button>`;
         }
         function renderUI() { document.getElementById('bal').innerText = "Rp " + session.balance.toLocaleString(); document.getElementById('apikey').innerText = session.apikey; }
         function copy(id) { navigator.clipboard.writeText(document.getElementById(id).innerText); alert("Copied!"); }
