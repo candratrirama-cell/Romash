@@ -10,23 +10,17 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     const data = { ...req.query, ...req.body };
-    const { action, username, password, key, amount } = data;
+    const { action, username, password, key, service, qty, link, markup, amount, target_user, depo_idx, status } = data;
 
-    // Helper: Ambil Database dengan limit waktu (Timeout 5 detik)
     const getDb = async () => {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), 5000);
         try {
             const r = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, { 
                 headers: { 'X-Master-Key': JSONBIN_KEY },
-                signal: controller.signal
+                cache: 'no-store' 
             });
-            clearTimeout(id);
             const resJson = await r.json();
             return resJson.record || { partners: [] };
-        } catch (e) {
-            return { partners: [] };
-        }
+        } catch (e) { return { partners: [] }; }
     };
 
     const updateDb = async (d) => {
@@ -38,13 +32,12 @@ export default async function handler(req, res) {
     };
 
     try {
-        // 1. ACTION SERVICES (DIPISAH: Tidak perlu baca JSONBin, biar Cepat!)
+        // --- 1. SERVICES (DIPISAH AGAR CEPAT) ---
         if (action === 'services') {
             const rSvc = await fetch('https://hokto.my.id/produksi/smm/', { 
                 method: 'POST', 
                 body: new URLSearchParams({ key: SMM_KEY, action: 'services' }) 
             }).then(r => r.json());
-            
             const list = Array.isArray(rSvc) ? rSvc : [];
             return res.json(list.map(s => ({
                 ...s,
@@ -52,27 +45,62 @@ export default async function handler(req, res) {
             })));
         }
 
-        // Ambil DB untuk aksi yang butuh data user
         let db = await getDb();
 
+        // --- 2. LOGIN & REGISTER ---
         if (action === 'login') {
             const user = db.partners.find(u => u.username === username && u.password === password);
-            if (!user) return res.json({ success: false, message: 'Gagal' });
-            return res.json({ success: true, user });
+            return res.json({ success: !!user, user });
+        }
+        if (action === 'register') {
+            if (db.partners.find(u => u.username === username)) return res.json({ success: false, message: 'User exist' });
+            const newKey = `xapik1${Math.random().toString(36).substring(2, 10)}`;
+            db.partners.push({ username, password, apikey: newKey, balance: 0, history: [], mutasi: [] });
+            await updateDb(db);
+            return res.json({ success: true, key: newKey });
         }
 
+        // --- 3. ADMIN: GET ALL PENDING (SOLUSI SINKRONISASI LAMA) ---
+        if (action === 'get_all_depo') {
+            let pending = [];
+            db.partners.forEach(u => {
+                if (u.mutasi) {
+                    u.mutasi.forEach((m, i) => {
+                        if (m.status === 'Pending') pending.push({ username: u.username, index: i, ...m });
+                    });
+                }
+            });
+            return res.json(pending);
+        }
+
+        // --- 4. ADMIN: CONFIRM DEPO ---
+        if (action === 'confirm_depo') {
+            const user = db.partners.find(u => u.username === target_user);
+            if (!user || !user.mutasi[depo_idx]) return res.json({ success: false, message: 'Data tidak ada' });
+            const item = user.mutasi[depo_idx];
+            if (status === 'Success' && item.status === 'Pending') {
+                user.balance = Number(user.balance) + Number(item.amt);
+                item.status = 'Success';
+                await updateDb(db);
+                return res.json({ success: true, message: 'Saldo masuk!' });
+            }
+            if (status === 'Canceled') {
+                item.status = 'Canceled';
+                await updateDb(db);
+                return res.json({ success: true });
+            }
+            return res.json({ success: false });
+        }
+
+        // --- 5. USER: CREATE QRIS ---
         if (action === 'create_qris') {
             const user = db.partners.find(u => u.username === username);
-            if (!user) return res.json({ success: false, message: 'User tidak ditemukan' });
-
             const total = Math.ceil(parseInt(amount) * 1.10) + Math.floor(Math.random() * 100);
-            
             const rPay = await fetch('https://hokto.my.id/produksi/payment/?api=create_qris', {
                 method: 'POST', 
                 headers: { 'X-API-KEY': PAYMENT_KEY, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount: total, partnerReferenceNo: "DEP" + Date.now() })
+                body: JSON.stringify({ amount: total, partnerReferenceNo: "GoR" + Date.now() })
             }).then(r => r.json());
-
             const qr = rPay.qrContent || rPay.data?.qrContent;
             if (qr) {
                 if(!user.mutasi) user.mutasi = [];
@@ -80,20 +108,33 @@ export default async function handler(req, res) {
                 await updateDb(db);
                 return res.json({ success: true, qr, total });
             }
-            return res.json({ success: false, message: 'Pusat Offline' });
+            return res.json({ success: false });
         }
 
-        // Action Add Order (Sama seperti logika sebelumnya yang sudah diperbaiki)
+        // --- 6. USER: ADD ORDER (SALDO POTONG MODAL) ---
         if (action === 'add') {
-            const apiKey = key || req.headers['x-api-key'];
-            const user = db.partners.find(u => u.apikey === apiKey);
+            const user = db.partners.find(u => u.apikey === (key || req.headers['x-api-key']));
             if (!user) return res.json({ status: false, error: 'Key Salah' });
-
-            // Logic order... (Pastikan user.balance terpotong modal)
-            // ... (Gunakan kode add order dari pesan sebelumnya)
+            const svcs = await fetch('https://hokto.my.id/produksi/smm/', { 
+                method: 'POST', body: new URLSearchParams({ key: SMM_KEY, action: 'services' }) 
+            }).then(r => r.json());
+            const target = svcs.find(s => s.service == service);
+            const modal = Math.ceil(((parseFloat(target.rate || target.price) / 1000) * qty) * 1.15);
+            const hargaJual = Math.ceil(modal * (1 + (parseFloat(markup || 0) / 100)));
+            if (user.balance < modal) return res.json({ status: false, error: 'Saldo Kurang' });
+            
+            const resH = await fetch('https://hokto.my.id/produksi/smm/', {
+                method: 'POST', body: new URLSearchParams({ key: SMM_KEY, action: 'add', service, link, quantity: qty })
+            }).then(r => r.json());
+            
+            if (resH.order) {
+                user.balance -= modal;
+                user.history.push({ id: resH.order, svc: target.name, price: modal, sell: hargaJual, date: new Date().toLocaleString() });
+                await updateDb(db);
+                return res.json({ status: true, order: resH.order, price: hargaJual });
+            }
+            return res.json({ status: false });
         }
 
-    } catch (e) {
-        res.status(500).json({ error: "Server Busy" });
-    }
+    } catch (e) { res.status(500).json({ error: "API Error" }); }
 }
