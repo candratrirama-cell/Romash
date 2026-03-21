@@ -3,96 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoR 1.1 Partner API</title>
+    <title>GoR 1.1 - Partner Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #020617; color: #f8fafc; font-family: monospace; }
+        body { background: #020617; color: #f8fafc; font-family: 'Courier New', monospace; }
         .glass { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; }
         .nav-active { color: #10b981; border-bottom: 2px solid #10b981; opacity: 1 !important; }
-        input { background: #020617; border: 1px solid #334155; padding: 12px; border-radius: 12px; width: 100%; color: #10b981; }
-        .svc-card:hover { border-color: #10b981; transform: translateY(-2px); transition: all 0.2s; }
+        input { background: #020617; border: 1px solid #334155; padding: 12px; border-radius: 12px; width: 100%; color: #10b981; outline: none; }
+        input:focus { border-color: #10b981; }
+        .svc-card { transition: all 0.3s ease; cursor: pointer; }
+        .svc-card:hover { border-color: #10b981; transform: translateY(-3px); }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-10">
 
     <div id="authArea" class="max-w-md mx-auto mt-10 glass p-8">
+        <h2 class="text-center font-black text-emerald-500 mb-6 italic">GoR 1.1 ACCESS</h2>
         <div class="flex gap-6 mb-8 border-b border-slate-800 pb-3">
             <button onclick="tabAuth('login')" id="btn-login" class="nav-active text-xs font-black uppercase">LOGIN</button>
             <button onclick="tabAuth('reg')" id="btn-reg" class="text-xs font-black uppercase opacity-40">DAFTAR</button>
         </div>
-        <div id="f-login"><input type="text" id="u" placeholder="Username" class="mb-4"><input type="password" id="p" placeholder="Password" class="mb-6"><button onclick="doLogin()" class="w-full bg-emerald-600 p-4 rounded-xl font-black text-black">MASUK</button></div>
-        <div id="f-reg" class="hidden"><input type="text" id="ru" placeholder="Username Baru" class="mb-4"><input type="password" id="rp" placeholder="Password Baru" class="mb-6"><button onclick="doReg()" class="w-full bg-blue-600 p-4 rounded-xl font-black text-white">DAFTAR SEKARANG</button></div>
+        <div id="f-login"><input type="text" id="u" placeholder="Username" class="mb-4"><input type="password" id="p" placeholder="Password" class="mb-6"><button onclick="doLogin()" class="w-full bg-emerald-600 p-4 rounded-xl font-black text-black hover:bg-emerald-400 transition-all">MASUK</button></div>
+        <div id="f-reg" class="hidden"><input type="text" id="ru" placeholder="Username Baru" class="mb-4"><input type="password" id="rp" placeholder="Password Baru" class="mb-6"><button onclick="doReg()" class="w-full bg-blue-600 p-4 rounded-xl font-black text-white hover:bg-blue-400 transition-all">BUAT AKUN</button></div>
     </div>
 
-    <div id="mainArea" class="max-w-4xl mx-auto hidden">
+    <div id="mainArea" class="max-w-5xl mx-auto hidden">
         <header class="flex justify-between items-center mb-8">
-            <h1 class="text-xl font-black italic text-emerald-500 underline">GoR 1.1 PARTNER</h1>
-            <button onclick="localStorage.clear(); location.reload();" class="text-[10px] text-red-500 font-bold uppercase">Logout</button>
+            <div>
+                <h1 class="text-xl font-black italic text-emerald-500 uppercase tracking-tighter">GoR 1.1 SYSTEM</h1>
+                <p class="text-[9px] opacity-40" id="userTag">Welcome, Partner</p>
+            </div>
+            <button onclick="localStorage.clear(); location.reload();" class="text-[10px] bg-red-900/20 text-red-500 px-3 py-1 rounded-full font-bold border border-red-500/20">LOGOUT</button>
         </header>
 
-        <nav class="flex gap-6 mb-8 border-b border-slate-800 overflow-x-auto pb-2">
-            <button onclick="tab('dash')" id="t-dash" class="nav-active text-[10px] font-bold uppercase shrink-0">1. Dashboard</button>
-            <button onclick="tab('top')" id="t-top" class="text-[10px] font-bold uppercase opacity-40 shrink-0">2. Isi Saldo</button>
-            <button onclick="tab('svc')" id="t-svc" class="text-[10px] font-bold uppercase opacity-40 shrink-0">3. Layanan SMM</button>
-            <button onclick="tab('doc')" id="t-doc" class="text-[10px] font-bold uppercase opacity-40 shrink-0">4. API Docs</button>
+        <nav class="flex gap-6 mb-8 border-b border-slate-800 overflow-x-auto pb-2 no-scrollbar">
+            <button onclick="tab('dash')" id="t-dash" class="nav-active text-[10px] font-bold uppercase shrink-0">Dashboard</button>
+            <button onclick="tab('top')" id="t-top" class="text-[10px] font-bold uppercase opacity-40 shrink-0">Isi Saldo</button>
+            <button onclick="tab('svc')" id="t-svc" class="text-[10px] font-bold uppercase opacity-40 shrink-0">Order SMM</button>
+            <button onclick="tab('doc')" id="t-doc" class="text-[10px] font-bold uppercase opacity-40 shrink-0">API Docs</button>
         </nav>
 
-        <section id="p-dash" class="space-y-4">
-            <div class="glass p-6"><p class="text-[10px] opacity-40 uppercase">Saldo API Anda</p><h2 id="bal" class="text-4xl font-black">Rp 0</h2></div>
-            <div class="glass p-6"><p class="text-[10px] opacity-40 uppercase mb-2">API Key Partner</p><div class="bg-black p-4 rounded-xl flex justify-between items-center border border-emerald-900/30"><code id="apikey" class="text-[11px] text-emerald-400 font-bold">xapik1...</code><button onclick="copy('apikey')" class="text-[9px] font-black uppercase text-white/50">Copy</button></div></div>
+        <section id="p-dash" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="glass p-6"><p class="text-[10px] opacity-40 uppercase">Saldo Anda</p><h2 id="bal" class="text-4xl font-black text-emerald-500">Rp 0</h2></div>
+            <div class="glass p-6"><p class="text-[10px] opacity-40 uppercase mb-2">API Key Anda</p><div class="bg-black p-4 rounded-xl flex justify-between items-center border border-emerald-900/30"><code id="apikey" class="text-[10px] text-emerald-400">xapik1...</code><button onclick="copy('apikey')" class="text-[9px] font-black uppercase text-white/50">Copy</button></div></div>
         </section>
 
-        <section id="p-top" class="hidden glass p-8 text-center space-y-6">
-            <h2 class="font-black">ISI SALDO (ADMIN 10%)</h2>
-            <input type="number" id="amt" placeholder="Nominal Saldo">
-            <button onclick="genQR()" class="w-full bg-emerald-600 p-4 rounded-xl font-black text-black">BUAT QRIS</button>
+        <section id="p-top" class="hidden glass p-8 space-y-6">
+            <div class="text-center"><h2 class="font-black text-xl mb-2 italic">TOP UP SALDO</h2><p class="text-[10px] opacity-50">Biaya Admin 10% (QRIS Otomatis)</p></div>
+            <input type="number" id="amt" placeholder="Masukkan Nominal (Contoh: 50000)">
+            <button onclick="genQR()" class="w-full bg-emerald-600 p-4 rounded-xl font-black text-black">BUAT QRIS PEMBAYARAN</button>
             <div id="qrArea" class="flex flex-col items-center"></div>
         </section>
 
         <section id="p-svc" class="hidden space-y-4">
-            <div class="glass p-4"><input type="text" id="searchSvc" onkeyup="filterSvc()" placeholder="Cari layanan (Contoh: Instagram, TikTok)..."></div>
-            <div id="svcList" class="grid grid-cols-1 md:grid-cols-2 gap-4 h-[500px] overflow-y-auto pr-2"></div>
+            <div class="glass p-4"><input type="text" id="searchSvc" onkeyup="filterSvc()" placeholder="Cari layanan (TikTok, Instagram, dll)..."></div>
+            <div id="svcList" class="grid grid-cols-1 md:grid-cols-2 gap-4 h-[500px] overflow-y-auto p-2"></div>
         </section>
 
-        <section id="p-doc" class="hidden space-y-6 glass p-6">
-            <h3 class="font-black text-emerald-500 uppercase">Endpoint Utama</h3>
-            <code class="text-[10px] bg-black p-3 block rounded text-emerald-400 break-all">https://romash.vercel.app/api/v1?store=smm&key=API_KEY&action=add&service=ID&link=TARGET&qty=QTY</code>
+        <section id="p-doc" class="hidden glass p-6 space-y-6">
+            <h3 class="font-black text-emerald-500 uppercase tracking-widest border-b border-emerald-500/20 pb-2">Dokumentasi API</h3>
+            <div class="space-y-4 text-[11px]">
+                <p class="opacity-70 italic">Gunakan endpoint ini untuk integrasi ke Bot WA atau Panel lain:</p>
+                <div class="bg-black p-4 rounded-xl border border-slate-800 text-emerald-400 break-all">
+                    https://romash.vercel.app/api/v1?store=smm&key=API_KEY&action=add&service=ID&link=TARGET&qty=JUMLAH
+                </div>
+            </div>
         </section>
     </div>
 
-    <script>
-        let session = JSON.parse(localStorage.getItem('pData')), allSvcs = [];
-        if(session) { document.getElementById('authArea').classList.add('hidden'); document.getElementById('mainArea').classList.remove('hidden'); renderUI(); }
+    <div id="orderModal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50">
+        <div class="glass p-8 w-full max-w-md space-y-4">
+            <h3 id="mSvcName" class="font-black text-emerald-500 text-sm italic">Konfirmasi Order</h3>
+            <p id="mSvcRate" class="text-[10px] opacity-60">Harga: Rp 0 / 1000</p>
+            <hr class="border-slate-800">
+            <input type="text" id="orderLink" placeholder="Masukkan Link (URL Profil/Post)">
+            <input type="number" id="orderQty" onkeyup="calcPrice()" placeholder="Jumlah Pesanan">
+            <div class="flex justify-between items-center px-2">
+                <p class="text-[10px] uppercase opacity-50">Estimasi Biaya:</p>
+                <p id="totalCost" class="font-black text-emerald-500">Rp 0</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeModal()" class="w-1/3 bg-slate-800 p-3 rounded-xl font-bold text-xs">BATAL</button>
+                <button onclick="executeOrder()" class="flex-1 bg-emerald-600 p-3 rounded-xl font-black text-xs text-black">BAYAR SEKARANG</button>
+            </div>
+        </div>
+    </div>
 
-        function tabAuth(t) { ['login','reg'].forEach(x => { document.getElementById('f-'+x).classList.toggle('hidden', x!==t); document.getElementById('btn-'+x).classList.toggle('nav-active', x===t); document.getElementById('btn-'+x).classList.toggle('opacity-40', x!==t); }); }
+    <script>
+        let session = JSON.parse(localStorage.getItem('pData')), allSvcs = [], activeSvc = null;
+        if(session) { 
+            document.getElementById('authArea').classList.add('hidden'); 
+            document.getElementById('mainArea').classList.remove('hidden'); 
+            document.getElementById('userTag').innerText = "Partner: " + session.username;
+            renderUI(); 
+        }
+
+        function tabAuth(t) { 
+            ['login','reg'].forEach(x => { 
+                document.getElementById('f-'+x).classList.toggle('hidden', x!==t); 
+                document.getElementById('btn-'+x).classList.toggle('nav-active', x===t); 
+                document.getElementById('btn-'+x).classList.toggle('opacity-40', x!==t); 
+            }); 
+        }
+
         async function doLogin() {
             const r = await fetch(`/api/v1?action=login&username=${document.getElementById('u').value}&password=${document.getElementById('p').value}`).then(r=>r.json());
-            if(r.success) { localStorage.setItem('pData', JSON.stringify(r.user)); location.reload(); } else alert("Salah!");
+            if(r.success) { localStorage.setItem('pData', JSON.stringify(r.user)); location.reload(); } else alert("Login Gagal!");
         }
+
         async function doReg() {
             const r = await fetch(`/api/v1?action=register&username=${document.getElementById('ru').value}&password=${document.getElementById('rp').value}`).then(r=>r.json());
-            if(r.success) { alert("Berhasil!"); tabAuth('login'); } else alert("Gagal!");
+            if(r.success) { alert("Daftar Berhasil! Silakan Login."); tabAuth('login'); } else alert("Gagal Daftar.");
         }
-        function tab(t) { ['dash','top','svc','doc'].forEach(x => { document.getElementById('p-'+x).classList.toggle('hidden', x!==t); document.getElementById('t-'+x).classList.toggle('nav-active', x===t); document.getElementById('t-'+x).classList.toggle('opacity-40', x!==t); }); if(t==='svc') loadSvc(); }
+
+        function tab(t) { 
+            ['dash','top','svc','doc'].forEach(x => { 
+                document.getElementById('p-'+x).classList.toggle('hidden', x!==t); 
+                document.getElementById('t-'+x).classList.toggle('nav-active', x===t); 
+                document.getElementById('t-'+x).classList.toggle('opacity-40', x!==t); 
+            }); 
+            if(t==='svc') loadSvc(); 
+        }
 
         async function loadSvc() {
             const list = document.getElementById('svcList');
-            list.innerHTML = '<p class="text-center opacity-30 mt-10 col-span-2">Loading Services...</p>';
+            list.innerHTML = '<p class="text-center opacity-30 mt-10 col-span-2">Syncing Services...</p>';
             allSvcs = await fetch('/api/v1?action=services').then(r=>r.json());
             renderSvc(allSvcs);
         }
 
         function renderSvc(data) {
             document.getElementById('svcList').innerHTML = data.map(s => `
-                <div class="glass p-5 svc-card border-slate-800">
-                    <div class="flex justify-between mb-2"><span class="text-[8px] bg-emerald-900/30 text-emerald-400 px-2 py-1 rounded font-bold uppercase">${s.category}</span><span class="text-[9px] font-bold">ID: ${s.service}</span></div>
-                    <p class="text-[11px] font-bold text-slate-200 mb-3 leading-relaxed">${s.name}</p>
-                    <div class="flex justify-between items-end border-t border-slate-800/50 pt-3">
-                        <div><p class="text-[8px] opacity-40 uppercase">Price/1k</p><p class="text-xs font-black text-emerald-500">Rp ${parseFloat(s.rate).toLocaleString()}</p></div>
-                        <div class="text-right"><p class="text-[8px] opacity-40 uppercase">Min/Max</p><p class="text-[9px] font-bold">${s.min}/${s.max}</p></div>
+                <div class="glass p-5 svc-card border-slate-800" onclick="openOrder(${JSON.stringify(s).replace(/"/g, '&quot;')})">
+                    <div class="flex justify-between mb-2"><span class="text-[8px] bg-emerald-900/30 text-emerald-400 px-2 py-1 rounded font-bold uppercase">${s.category}</span><span class="text-[9px] opacity-40">ID: ${s.service}</span></div>
+                    <p class="text-[11px] font-bold text-slate-200 mb-4">${s.name}</p>
+                    <div class="flex justify-between items-end">
+                        <div><p class="text-[8px] opacity-40 uppercase tracking-widest">Price/1k</p><p class="text-sm font-black text-emerald-500">Rp ${parseFloat(s.rate).toLocaleString()}</p></div>
+                        <button class="bg-emerald-600 text-[9px] font-black text-black px-4 py-2 rounded-lg uppercase italic">Order</button>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
+        }
+
+        function openOrder(svc) {
+            activeSvc = svc;
+            document.getElementById('mSvcName').innerText = svc.name;
+            document.getElementById('mSvcRate').innerText = `Harga: Rp ${parseFloat(svc.rate).toLocaleString()} / 1000`;
+            document.getElementById('orderModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('orderModal').classList.add('hidden'); }
+
+        function calcPrice() {
+            const qty = document.getElementById('orderQty').value || 0;
+            const price = Math.ceil((parseFloat(activeSvc.rate) / 1000) * qty);
+            document.getElementById('totalCost').innerText = "Rp " + price.toLocaleString();
+        }
+
+        async function executeOrder() {
+            const qty = document.getElementById('orderQty').value;
+            const link = document.getElementById('orderLink').value;
+            if(!qty || !link) return alert("Isi Link & Jumlah!");
+            
+            const btn = event.target;
+            btn.innerText = "PROCESSING...";
+            btn.disabled = true;
+
+            const res = await fetch(`/api/v1?store=smm&key=${session.apikey}&action=add&service=${activeSvc.service}&link=${encodeURIComponent(link)}&qty=${qty}`).then(r=>r.json());
+            
+            if(res.status) {
+                alert(`Sukses! Order ID: ${res.order_id}\nSaldo sisa: Rp ${res.sisa.toLocaleString()}`);
+                location.reload();
+            } else {
+                alert("Gagal: " + (res.error || res.message));
+                btn.innerText = "BAYAR SEKARANG";
+                btn.disabled = false;
+            }
         }
 
         function filterSvc() {
@@ -102,9 +189,12 @@
         }
 
         async function genQR() {
-            const r = await fetch(`/api/v1?action=create_qris&amount=${document.getElementById('amt').value}&username=${session.username}`).then(r=>r.json());
-            if(r.qr) document.getElementById('qrArea').innerHTML = `<div class="bg-white p-2 rounded-xl mt-4"><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(r.qr)}" class="w-40 h-40"></div><p class="mt-2 font-black text-emerald-400">Total: Rp ${r.total.toLocaleString()}</p><button onclick="window.open('https://wa.me/62882008519349?text=Konfirmasi+Bayar+Rp+${r.total}', '_blank')" class="mt-4 bg-green-600 p-2 rounded text-[10px] font-bold text-black">KONFIRMASI WHATSAPP</button>`;
+            const amt = document.getElementById('amt').value;
+            if(!amt || amt < 1000) return alert("Minimal 1000!");
+            const r = await fetch(`/api/v1?action=create_qris&amount=${amt}&username=${session.username}`).then(r=>r.json());
+            if(r.qr) document.getElementById('qrArea').innerHTML = `<div class="bg-white p-2 rounded-xl mt-4"><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(r.qr)}" class="w-40 h-40"></div><p class="mt-2 font-black text-emerald-500">Bayar: Rp ${r.total.toLocaleString()}</p><button onclick="window.open('https://wa.me/62882008519349?text=Konfirmasi+Bayar+Rp+${r.total}', '_blank')" class="mt-4 bg-green-600 p-2 rounded text-[10px] font-bold text-black uppercase">Konfirmasi WA</button>`;
         }
+
         function renderUI() { document.getElementById('bal').innerText = "Rp " + session.balance.toLocaleString(); document.getElementById('apikey').innerText = session.apikey; }
         function copy(id) { navigator.clipboard.writeText(document.getElementById(id).innerText); alert("Copied!"); }
     </script>
