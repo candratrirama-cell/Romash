@@ -2,24 +2,93 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Monitor - GoR</title>
+    <title>GoR 1.1 - Owner Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #020617; color: #fff; font-family: monospace; }
+        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 15px; padding: 20px; }
+    </style>
 </head>
-<body class="bg-black text-white p-8">
-    <h1 class="text-xl font-black italic text-emerald-500 mb-8">PARTNER MONITORING</h1>
-    <div id="list" class="space-y-4"></div>
+<body class="p-6">
+    <div class="max-w-5xl mx-auto space-y-8">
+        <h1 class="text-2xl font-black italic text-emerald-500 underline">OWNER CONTROL CENTER</h1>
+
+        <div class="card border-yellow-500/30">
+            <h2 class="text-xs font-black mb-4 text-yellow-500 uppercase">⚡ Menunggu Persetujuan Deposit</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-[10px] text-left">
+                    <thead class="opacity-40 border-b border-slate-800">
+                        <tr>
+                            <th class="p-2">User</th>
+                            <th class="p-2">Nominal</th>
+                            <th class="p-2">Total Bayar</th>
+                            <th class="p-2">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="depoTable">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xs font-black mb-4 text-emerald-500 uppercase">👥 Daftar Partner & Saldo</h2>
+            <div id="partnerList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+    </div>
+
     <script>
-        async function load() {
-            const r = await fetch('https://api.jsonbin.io/v3/b/69be7bc1c3097a1dd54655de/latest', { headers: { 'X-Master-Key': '$2a$10$go25lr52o.r3GKWOrNSUiO6Gdv52kcAcNS56vMiiIhlM5yX3X2ON6' }});
-            const db = (await r.json()).record;
-            document.getElementById('list').innerHTML = db.partners.map(p => `
-                <div class="p-4 border border-slate-800 rounded-xl bg-slate-900 flex justify-between">
-                    <div><p class="font-bold">${p.username}</p><p class="text-[10px] opacity-40">${p.apikey}</p></div>
-                    <div class="text-right"><p class="font-black text-emerald-400">Rp ${p.balance.toLocaleString()}</p><p class="text-[9px] opacity-40">${p.history.length} Trx</p></div>
+        async function loadAdmin() {
+            const r = await fetch('/api/v1?action=login&username=admin&password=123').then(res=>res.json()); // Simulasi ambil DB
+            const db = await fetch('https://api.jsonbin.io/v3/b/69be7bc1c3097a1dd54655de/latest', {
+                headers: { 'X-Master-Key': '$2a$10$go25lr52o.r3GKWOrNSUiO6Gdv52kcAcNS56vMiiIhlM5yX3X2ON6' }
+            }).then(res=>res.json());
+            
+            const partners = db.record.partners;
+            
+            // Render Tabel Deposit Pending
+            let depoHtml = '';
+            partners.forEach(u => {
+                u.mutasi.forEach((m, idx) => {
+                    if(m.status === 'Pending') {
+                        depoHtml += `
+                        <tr class="border-b border-slate-800/50">
+                            <td class="p-2 font-bold">${u.username}</td>
+                            <td class="p-2 text-emerald-400">Rp ${m.amt.toLocaleString()}</td>
+                            <td class="p-2 text-white">Rp ${m.bill.toLocaleString()}</td>
+                            <td class="p-2 flex gap-2">
+                                <button onclick="actDepo('${u.username}', ${m.amt}, ${idx}, 'Success')" class="bg-emerald-600 px-2 py-1 rounded font-bold text-[8px]">TERIMA</button>
+                                <button onclick="actDepo('${u.username}', 0, ${idx}, 'Rejected')" class="bg-red-600 px-2 py-1 rounded font-bold text-[8px]">TOLAK</button>
+                            </td>
+                        </tr>`;
+                    }
+                });
+            });
+            document.getElementById('depoTable').innerHTML = depoHtml || '<tr><td colspan="4" class="p-4 text-center opacity-30 italic">Tidak ada deposit tertunda</td></tr>';
+
+            // Render List Partner
+            document.getElementById('partnerList').innerHTML = partners.map(p => `
+                <div class="bg-black/40 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <p class="text-xs font-black text-emerald-500">${p.username}</p>
+                        <p class="text-[9px] opacity-40">${p.apikey}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-bold">Rp ${p.balance.toLocaleString()}</p>
+                        <p class="text-[8px] opacity-40">${p.history.length} Trx</p>
+                    </div>
                 </div>
             `).join('');
         }
-        load();
+
+        async function actDepo(user, amt, idx, status) {
+            if(!confirm(`Yakin ingin ${status} deposit ini?`)) return;
+            const res = await fetch(`/api/v1?action=confirm_depo&target_user=${user}&amount=${amt}&depo_idx=${idx}&status=${status}`).then(r=>r.json());
+            if(res.success) { alert("Berhasil diupdate!"); loadAdmin(); }
+        }
+
+        loadAdmin();
+        setInterval(loadAdmin, 10000); // Auto refresh tiap 10 detik
     </script>
 </body>
 </html>
