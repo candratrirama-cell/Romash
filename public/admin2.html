@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Monitor - GoR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white p-8">
+    <h1 class="text-xl font-black italic text-emerald-500 mb-8">PARTNER MONITORING</h1>
+    <div id="list" class="space-y-4"></div>
+    <script>
+        async function load() {
+            const r = await fetch('https://api.jsonbin.io/v3/b/69be7bc1c3097a1dd54655de/latest', { headers: { 'X-Master-Key': '$2a$10$go25lr52o.r3GKWOrNSUiO6Gdv52kcAcNS56vMiiIhlM5yX3X2ON6' }});
+            const db = (await r.json()).record;
+            document.getElementById('list').innerHTML = db.partners.map(p => `
+                <div class="p-4 border border-slate-800 rounded-xl bg-slate-900 flex justify-between">
+                    <div><p class="font-bold">${p.username}</p><p class="text-[10px] opacity-40">${p.apikey}</p></div>
+                    <div class="text-right"><p class="font-black text-emerald-400">Rp ${p.balance.toLocaleString()}</p><p class="text-[9px] opacity-40">${p.history.length} Trx</p></div>
+                </div>
+            `).join('');
+        }
+        load();
+    </script>
+</body>
+</html>
