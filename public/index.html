@@ -3,52 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoR Partner API</title>
+    <title>GoR 1.1 Partner API</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&display=swap" rel="stylesheet">
     <style>
-        body { background: #020617; color: #fff; font-family: 'Inter', sans-serif; }
-        .glass { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; }
-        .nav-active { color: #10b981; border-bottom: 2px solid #10b981; }
+        body { background: #020617; color: #f8fafc; font-family: 'JetBrains Mono', monospace; }
+        .glass { background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; box-shadow: 0 0 20px rgba(16, 185, 129, 0.05); }
+        .nav-active { color: #10b981; border-bottom: 2px solid #10b981; opacity: 1 !important; }
+        input { background: #020617; border: 1px solid #334155; padding: 12px; border-radius: 12px; width: 100%; outline: none; color: #10b981; font-weight: bold; }
+        input:focus { border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div id="loginArea" class="max-w-md mx-auto mt-20 glass p-8">
-        <h2 class="font-black italic mb-6">PARTNER LOGIN</h2>
-        <input type="text" id="u" placeholder="Username" class="w-full bg-black p-3 rounded-lg mb-4 border border-slate-800">
-        <input type="password" id="p" placeholder="Password" class="w-full bg-black p-3 rounded-lg mb-6 border border-slate-800 text-emerald-500">
-        <button onclick="doLogin()" class="w-full bg-emerald-600 p-3 rounded-lg font-black italic">MASUK</button>
+<body class="p-4 md:p-10">
+
+    <div id="authArea" class="max-w-md mx-auto mt-10 glass p-8">
+        <div class="flex gap-6 mb-8 border-b border-slate-800 pb-3">
+            <button onclick="tabAuth('login')" id="btn-login" class="nav-active text-[10px] font-black italic uppercase">LOGIN</button>
+            <button onclick="tabAuth('reg')" id="btn-reg" class="text-[10px] font-black italic uppercase opacity-40">DAFTAR</button>
+        </div>
+
+        <div id="f-login">
+            <input type="text" id="u" placeholder="Username" class="mb-4">
+            <input type="password" id="p" placeholder="Password" class="mb-6">
+            <button onclick="doLogin()" class="w-full bg-emerald-600 p-4 rounded-xl font-black italic text-black">MASUK</button>
+        </div>
+
+        <div id="f-reg" class="hidden">
+            <input type="text" id="ru" placeholder="Username Baru" class="mb-4">
+            <input type="password" id="rp" placeholder="Password Baru" class="mb-6">
+            <button onclick="doReg()" class="w-full bg-blue-600 p-4 rounded-xl font-black italic text-white">DAFTAR PARTNER</button>
+        </div>
     </div>
 
     <div id="mainArea" class="max-w-3xl mx-auto hidden">
-        <nav class="flex justify-between items-center mb-10">
-            <h1 class="text-xl font-black italic text-emerald-500">GoR PARTNER</h1>
-            <button onclick="localStorage.clear(); location.reload();" class="text-[9px] opacity-40 uppercase">Keluar</button>
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-black italic text-emerald-500 underline decoration-white/10">GoR 1.1 PARTNER</h1>
+            <button onclick="localStorage.clear(); location.reload();" class="text-[9px] font-bold text-red-500 uppercase tracking-tighter">Logout</button>
+        </header>
+
+        <nav class="flex gap-4 mb-8 overflow-x-auto pb-2 border-b border-slate-800">
+            <button onclick="tab('dash')" id="t-dash" class="nav-active text-[10px] font-extrabold uppercase shrink-0">1. Home</button>
+            <button onclick="tab('top')" id="t-top" class="text-[10px] font-extrabold uppercase opacity-40 shrink-0">2. Topup</button>
+            <button onclick="tab('svc')" id="t-svc" class="text-[10px] font-extrabold uppercase opacity-40 shrink-0">3. Services</button>
+            <button onclick="tab('doc')" id="t-doc" class="text-[10px] font-extrabold uppercase opacity-40 shrink-0">4. API Docs</button>
         </nav>
 
-        <section class="glass p-6 mb-6">
-            <p class="text-[10px] opacity-50 mb-1">SALDO API</p>
-            <h2 id="bal" class="text-3xl font-black">Rp 0</h2>
-            <div class="mt-4 bg-black p-3 rounded-lg flex justify-between items-center">
-                <code id="apikey" class="text-[10px] text-emerald-400 font-mono">xapik1...</code>
-                <button onclick="navigator.clipboard.writeText(session.apikey); alert('Copied!')" class="text-[10px] font-bold">COPY</button>
-            </div>
-        </section>
+        <main class="space-y-6">
+            <section id="p-dash" class="space-y-4">
+                <div class="glass p-6">
+                    <p class="text-[10px] opacity-40 mb-1">SALDO API</p>
+                    <h2 id="bal" class="text-4xl font-black italic">Rp 0</h2>
+                </div>
+                <div class="glass p-6">
+                    <p class="text-[10px] opacity-40 mb-2">PARTNER API KEY</p>
+                    <div class="bg-black/50 p-4 rounded-xl flex justify-between items-center border border-emerald-900/30">
+                        <code id="apikey" class="text-[11px] text-emerald-400 font-bold tracking-widest">xapik1...</code>
+                        <button onclick="copy()" class="text-[9px] font-black hover:text-emerald-500">COPY</button>
+                    </div>
+                </div>
+            </section>
 
-        <div class="glass p-6 text-center space-y-4">
-            <h3 class="font-black italic text-xs uppercase">Top Up Saldo (Admin 10%)</h3>
-            <input type="number" id="amt" placeholder="Nominal" class="w-full bg-black p-3 rounded-lg border border-slate-800">
-            <button onclick="genQR()" class="w-full bg-emerald-600 p-3 rounded-lg font-black text-xs italic">GENERATE QRIS</button>
-            <div id="qrArea" class="flex flex-col items-center"></div>
-        </div>
+            <section id="p-top" class="hidden glass p-8 text-center space-y-6">
+                <h2 class="text-xl font-black italic">ISI SALDO (ADMIN 10%)</h2>
+                <input type="number" id="amt" placeholder="Nominal (Cth: 50000)">
+                <button onclick="genQR()" class="w-full bg-emerald-600 p-4 rounded-xl font-black italic text-black">BUAT QRIS</button>
+                <div id="qrArea" class="flex flex-col items-center"></div>
+            </section>
+
+            <section id="p-svc" class="hidden glass p-6">
+                <div id="svcList" class="h-[400px] overflow-y-auto space-y-2 pr-2"></div>
+            </section>
+
+            <section id="p-doc" class="hidden glass p-6 space-y-4">
+                <h2 class="font-black italic text-emerald-500">BASE ENDPOINT</h2>
+                <div class="bg-black p-4 rounded-xl text-[10px] text-emerald-400 break-all border border-emerald-900/30 leading-relaxed">
+                    GET https://romash.vercel.app/api/v1?store=smm&key=YOUR_KEY&action=add&service=ID&link=URL&qty=100
+                </div>
+                <ul class="text-[10px] opacity-50 space-y-2">
+                    <li>• Admin Top Up: 10% (Otomatis)</li>
+                    <li>• Profit Order: 15% (Otomatis dari rate)</li>
+                </ul>
+            </section>
+        </main>
     </div>
 
     <script>
         let session = JSON.parse(localStorage.getItem('pData'));
-        if(session) { document.getElementById('loginArea').classList.add('hidden'); document.getElementById('mainArea').classList.remove('hidden'); renderUI(); }
+
+        if(session) {
+            document.getElementById('authArea').classList.add('hidden');
+            document.getElementById('mainArea').classList.remove('hidden');
+            renderUI();
+        }
+
+        function tabAuth(t) {
+            ['login','reg'].forEach(x => { document.getElementById('f-'+x).classList.add('hidden'); document.getElementById('btn-'+x).classList.remove('nav-active','opacity-100'); document.getElementById('btn-'+x).classList.add('opacity-40'); });
+            document.getElementById('f-'+t).classList.remove('hidden');
+            document.getElementById('btn-'+t).classList.add('nav-active','opacity-100');
+        }
 
         async function doLogin() {
-            const res = await fetch(`/api/v1?action=login&username=${document.getElementById('u').value}&password=${document.getElementById('p').value}`).then(r=>r.json());
-            if(res.success) { localStorage.setItem('pData', JSON.stringify(res.user)); location.reload(); } else { alert("Login Salah!"); }
+            const u = document.getElementById('u').value, p = document.getElementById('p').value;
+            const res = await fetch(`/api/v1?action=login&username=${u}&password=${p}`).then(r=>r.json());
+            if(res.success) { localStorage.setItem('pData', JSON.stringify(res.user)); location.reload(); }
+            else { alert("Login Gagal!"); }
+        }
+
+        async function doReg() {
+            const u = document.getElementById('ru').value, p = document.getElementById('rp').value;
+            const res = await fetch(`/api/v1?action=register&username=${u}&password=${p}`).then(r=>r.json());
+            if(res.success) { alert("Daftar Berhasil! Silakan Login."); tabAuth('login'); }
+            else { alert(res.message); }
+        }
+
+        function tab(t) {
+            ['dash','top','svc','doc'].forEach(x => { document.getElementById('p-'+x).classList.add('hidden'); document.getElementById('t-'+x).classList.add('opacity-40'); document.getElementById('t-'+x).classList.remove('nav-active'); });
+            document.getElementById('p-'+t).classList.remove('hidden');
+            document.getElementById('t-'+t).classList.add('nav-active');
+            document.getElementById('t-'+t).classList.remove('opacity-40');
+            if(t === 'svc') loadSvc();
+        }
+
+        async function loadSvc() {
+            document.getElementById('svcList').innerHTML = '<p class="text-center opacity-30 mt-10">Loading...</p>';
+            const res = await fetch('/api/v1?action=services').then(r=>r.json());
+            document.getElementById('svcList').innerHTML = res.map(s => `
+                <div class="bg-black/50 p-4 rounded-xl border border-slate-800 text-[10px]">
+                    <p class="font-black text-emerald-400">ID: ${s.service} - ${s.name}</p>
+                    <p class="opacity-40 italic">Rate Partner: Rp ${parseFloat(s.rate).toLocaleString()}</p>
+                </div>
+            `).join('');
         }
 
         async function genQR() {
@@ -56,15 +140,16 @@
             const res = await fetch(`/api/v1?action=create_qris&amount=${a}&username=${session.username}`).then(r=>r.json());
             if(res.qr) {
                 document.getElementById('qrArea').innerHTML = `
-                    <div class="bg-white p-2 rounded-xl mt-4"><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(res.qr)}" class="w-40 h-40"></div>
-                    <p class="mt-2 font-black text-emerald-400">Total: Rp ${res.total.toLocaleString()}</p>
-                    <button onclick="confirmWA('${res.total}')" class="mt-4 bg-green-600 p-2 rounded text-[9px] font-bold">KONFIRMASI WHATSAPP</button>
+                    <div class="bg-white p-2 rounded-2xl mt-6"><img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(res.qr)}" class="w-48 h-48"></div>
+                    <p class="mt-4 font-black text-xl text-emerald-400 tracking-widest">Rp ${res.total.toLocaleString()}</p>
+                    <button onclick="confirmWA('${res.total}')" class="mt-4 bg-green-600 text-black font-black text-[10px] p-3 rounded-xl uppercase italic">Konfirmasi WhatsApp</button>
                 `;
             }
         }
 
         function confirmWA(t) { window.open(`https://wa.me/62882008519349?text=Halo Bos, Saya sudah bayar Top Up API Rp ${t} (User: ${session.username})`, '_blank'); }
         function renderUI() { document.getElementById('bal').innerText = "Rp " + session.balance.toLocaleString(); document.getElementById('apikey').innerText = session.apikey; }
+        function copy() { navigator.clipboard.writeText(session.apikey); alert("API Key Copied!"); }
     </script>
 </body>
 </html>
