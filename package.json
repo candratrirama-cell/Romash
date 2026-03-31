@@ -1,9 +1,10 @@
 {
-  "name": "gor-otp-gateway",
+  "name": "otp-publisher-dashboard",
   "version": "1.0.0",
   "main": "api/index.js",
   "dependencies": {
+    "express": "^4.18.2",
     "axios": "^1.6.0",
-    "express": "^4.18.2"
+    "bcryptjs": "^2.4.3"
   }
 }
