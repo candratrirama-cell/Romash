@@ -3,99 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoR 1.1 - Provider Dashboard</title>
+    <title>GoR 1.1 - OTP SaaS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
         body { background: #000; color: #00f2ff; font-family: 'Space Grotesk', sans-serif; }
-        .brutal-card { border: 4px solid #00f2ff; background: #050505; box-shadow: 10px 10px 0px #00f2ff; transition: 0.2s; }
-        .brutal-input { background: #111; border: 2px solid #00f2ff; color: #fff; padding: 12px; width: 100%; outline: none; margin-bottom: 15px; }
-        .brutal-btn { background: #00f2ff; color: #000; font-weight: 900; padding: 12px; width: 100%; border: none; cursor: pointer; text-transform: uppercase; box-shadow: 4px 4px 0px #fff; }
-        .brutal-btn:active { transform: translate(3px, 3px); box-shadow: none; }
-        .code-block { background: #111; border-left: 4px solid #00f2ff; padding: 10px; font-family: monospace; color: #00f2ff; font-size: 0.75rem; }
+        .brutal-card { border: 4px solid #00f2ff; background: #080808; box-shadow: 8px 8px 0px #00f2ff; }
+        .brutal-input { background: #111; border: 2px solid #00f2ff; color: #fff; padding: 10px; width: 100%; outline: none; margin-bottom: 10px; }
+        .brutal-btn { background: #00f2ff; color: #000; font-weight: 900; padding: 12px; width: 100%; border: none; cursor: pointer; text-transform: uppercase; }
         .hidden { display: none; }
     </style>
 </head>
 <body class="p-6">
 
-    <div id="login-box" class="max-w-sm mx-auto mt-20 brutal-card p-8">
-        <h1 class="text-3xl font-black italic mb-6 text-center">GoR 1.1<br>ADMIN LOGIN</h1>
-        <input type="password" id="pass" class="brutal-input" placeholder="PASSWORD CONSOLE">
-        <button onclick="login()" class="brutal-btn">Enter System</button>
+    <div id="auth-screen" class="max-w-sm mx-auto mt-20 brutal-card p-8">
+        <h1 class="text-3xl font-black italic mb-6 text-center">GoR 1.1 ACCESS</h1>
+        <input type="text" id="u" class="brutal-input" placeholder="USERNAME">
+        <input type="password" id="p" class="brutal-input" placeholder="PASSWORD">
+        <button onclick="auth()" class="brutal-btn">Login / Daftar</button>
     </div>
 
-    <div id="dashboard" class="max-w-6xl mx-auto hidden">
-        <header class="flex justify-between items-center mb-10 border-b-4 border-cyan-400 pb-4">
-            <h1 class="text-3xl font-black italic uppercase">Provider Console</h1>
-            <button onclick="location.reload()" class="bg-red-600 text-white px-4 py-1 text-xs font-bold">EXIT</button>
-        </header>
+    <div id="dash-screen" class="max-w-6xl mx-auto hidden">
+        <div class="flex justify-between items-center mb-10 border-b-4 border-cyan-400 pb-4">
+            <h1 class="text-3xl font-black italic">DASHBOARD USER</h1>
+            <span id="user-display" class="bg-white text-black px-4 font-bold"></span>
+        </div>
 
-        <div class="grid md:grid-cols-3 gap-8">
+        <div class="grid md:grid-cols-3 gap-6">
             <div class="brutal-card p-6">
-                <h2 class="font-bold mb-4 uppercase">🔑 API Key Manager</h2>
-                <input type="text" id="api-key-res" class="brutal-input text-xs" readonly value="G-DEFAULT-12345">
-                <button onclick="genKey()" class="brutal-btn bg-white text-black mb-4">Generate New</button>
-                <p class="text-[10px] opacity-70">Berikan key ini ke developer yang berlangganan jasa kamu.</p>
+                <p class="text-xs uppercase opacity-70">Saldo Anda</p>
+                <h2 class="text-4xl font-black mb-4">RP <span id="balance-display">0</span></h2>
+                <p class="text-xs uppercase opacity-70 mb-2">API KEY SAYA</p>
+                <input type="text" id="apikey-display" class="brutal-input text-[10px]" readonly>
             </div>
 
-            <div class="brutal-card p-6 text-center">
-                <h2 class="font-bold mb-4 uppercase">📱 OTP Monitor</h2>
-                <div id="otp-screen" class="text-6xl font-black py-10 bg-zinc-900 border-2 border-dashed border-cyan-400 mb-6">------</div>
-                <button onclick="refreshOTP()" class="brutal-btn">Refresh OTP</button>
+            <div class="brutal-card p-6">
+                <h2 class="font-bold mb-4 uppercase">🧪 Test Kirim OTP</h2>
+                <input type="text" id="target-wa" class="brutal-input" placeholder="628xxxx (No WA kamu)">
+                <button onclick="testOTP()" class="brutal-btn bg-yellow-400 mb-4">Kirim & Cek OTP (Cost 10)</button>
+                <div id="test-res" class="text-center font-black text-2xl py-4 bg-zinc-900 border-2 border-dashed border-cyan-400">------</div>
             </div>
 
-            <div class="brutal-card p-6 bg-zinc-900">
-                <h2 class="font-bold mb-4 uppercase text-white">📑 API Integration</h2>
-                <p class="text-[11px] text-gray-400 mb-4">Suruh developer client kamu memanggil URL ini untuk verifikasi login:</p>
-                <div class="code-block mb-4">
-                    GET /api/get-latest?apikey=YOUR_KEY
-                </div>
-                <h3 class="text-xs font-bold mb-2">TOP UP BALANCE</h3>
-                <input type="number" id="amt" class="brutal-input text-xs mb-2" placeholder="Nominal Rp">
-                <button onclick="getQRIS()" class="brutal-btn bg-white text-black text-xs py-2">Get QRIS</button>
-                <img id="qr-img" class="hidden mt-4 mx-auto w-32 border-2 border-white">
+            <div class="brutal-card p-6">
+                <h2 class="font-bold mb-4 uppercase">Top Up Saldo</h2>
+                <input type="number" id="amt" class="brutal-input text-xs" placeholder="Min 500">
+                <button onclick="getQRIS()" class="brutal-btn bg-white text-black text-xs py-2 mb-4">Get QRIS</button>
+                <img id="qr-img" class="hidden mx-auto w-32 border-2 border-white mb-4">
+                
+                <h2 class="font-bold mb-2 uppercase border-t border-cyan-800 pt-4">API Docs</h2>
+                <p class="text-[9px] font-mono text-gray-400">GET /api/get-otp?apikey=YOUR_KEY</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Simple Login System
-        function login() {
-            const p = document.getElementById('pass').value;
-            if(p === "123") { // Ganti password di sini
-                document.getElementById('login-box').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-            } else { alert("Password Salah!"); }
-        }
+        let myUser = {};
 
-        // Key Gen
-        function genKey() {
-            const k = "G-" + Math.random().toString(36).substring(2, 12).toUpperCase();
-            document.getElementById('api-key-res').value = k;
-        }
-
-        // Refresh OTP
-        async function refreshOTP() {
-            const screen = document.getElementById('otp-screen');
-            screen.innerText = "...";
-            const res = await fetch('/api/get-latest?apikey=KEY-12345');
+        async function auth() {
+            const u = document.getElementById('u').value;
+            const p = document.getElementById('p').value;
+            const res = await fetch('/api/auth', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({u, p}) });
             const data = await res.json();
-            screen.innerText = data.otp || "EMPTY";
+            if(data.status) {
+                myUser = data.data;
+                document.getElementById('user-display').innerText = data.user;
+                document.getElementById('balance-display').innerText = myUser.balance;
+                document.getElementById('apikey-display').value = myUser.apikey;
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('dash-screen').classList.remove('hidden');
+            } else { alert(data.msg); }
         }
 
-        // Get QRIS
+        async function testOTP() {
+            const wa = document.getElementById('target-wa').value;
+            if(!wa) return alert("Masukkan nomor WA!");
+            document.getElementById('test-res').innerText = "WAIT...";
+            
+            // Simulasi Instruksi: User harus kirim WA dulu ke nomor kamu
+            alert("Silahkan kirim pesan apapun ke nomor WA Provider kami, lalu klik OK.");
+
+            const res = await fetch(`/api/get-otp?apikey=${myUser.apikey}`);
+            const data = await res.json();
+            if(data.status) {
+                document.getElementById('test-res').innerText = data.otp;
+                document.getElementById('balance-display').innerText = data.sisa;
+            } else { alert(data.msg); document.getElementById('test-res').innerText = "FAIL"; }
+        }
+
         async function getQRIS() {
             const amount = document.getElementById('amt').value;
-            const res = await fetch('/api/order', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ amount })
-            });
+            const res = await fetch('/api/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ amount }) });
             const data = await res.json();
-            if(data.qr) {
-                document.getElementById('qr-img').src = data.qr;
-                document.getElementById('qr-img').classList.remove('hidden');
-            }
+            if(data.qr) { document.getElementById('qr-img').src = data.qr; document.getElementById('qr-img').classList.remove('hidden'); }
         }
     </script>
 </body>
