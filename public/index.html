@@ -3,99 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoR 1.1 - OTP SaaS</title>
+    <title>GoR 1.1 - OTP Provider SaaS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
-        body { background: #000; color: #00f2ff; font-family: 'Space Grotesk', sans-serif; }
-        .brutal-card { border: 4px solid #00f2ff; background: #080808; box-shadow: 8px 8px 0px #00f2ff; }
-        .brutal-input { background: #111; border: 2px solid #00f2ff; color: #fff; padding: 10px; width: 100%; outline: none; margin-bottom: 10px; }
-        .brutal-btn { background: #00f2ff; color: #000; font-weight: 900; padding: 12px; width: 100%; border: none; cursor: pointer; text-transform: uppercase; }
+        
+        :root {
+            --neon: #00f2ff;
+            --bg: #000000;
+        }
+
+        body { 
+            background: var(--bg); 
+            color: var(--neon); 
+            font-family: 'Space Grotesk', sans-serif; 
+        }
+
+        .brutal-card { 
+            border: 4px solid var(--neon); 
+            background: #080808; 
+            box-shadow: 8px 8px 0px var(--neon); 
+            transition: all 0.2s ease;
+        }
+
+        .brutal-input { 
+            background: #111; 
+            border: 2px solid var(--neon); 
+            color: #fff; 
+            padding: 12px; 
+            width: 100%; 
+            outline: none; 
+            margin-bottom: 15px; 
+        }
+
+        .brutal-btn { 
+            background: var(--neon); 
+            color: #000; 
+            font-weight: 900; 
+            padding: 14px; 
+            width: 100%; 
+            border: none; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            box-shadow: 4px 4px 0px #fff;
+        }
+
+        .brutal-btn:active { 
+            transform: translate(3px, 3px); 
+            box-shadow: none; 
+        }
+
+        .neon-text { text-shadow: 0 0 10px var(--neon); }
         .hidden { display: none; }
+        
+        code { background: #111; color: #fff; padding: 4px; border-radius: 4px; font-size: 0.8rem; }
     </style>
 </head>
-<body class="p-6">
+<body class="p-6 md:p-12">
 
-    <div id="auth-screen" class="max-w-sm mx-auto mt-20 brutal-card p-8">
-        <h1 class="text-3xl font-black italic mb-6 text-center">GoR 1.1 ACCESS</h1>
+    <div id="auth-screen" class="max-w-md mx-auto mt-20 brutal-card p-10">
+        <h1 class="text-4xl font-black italic mb-8 text-center neon-text">GoR 1.1<br>GATEWAY</h1>
+        <p class="text-xs text-center mb-6 opacity-70">Masuk untuk mendapatkan API Key & Saldo OTP</p>
+        
         <input type="text" id="u" class="brutal-input" placeholder="USERNAME">
         <input type="password" id="p" class="brutal-input" placeholder="PASSWORD">
-        <button onclick="auth()" class="brutal-btn">Login / Daftar</button>
+        
+        <button onclick="handleAuth()" class="brutal-btn">Access Console</button>
     </div>
 
     <div id="dash-screen" class="max-w-6xl mx-auto hidden">
-        <div class="flex justify-between items-center mb-10 border-b-4 border-cyan-400 pb-4">
-            <h1 class="text-3xl font-black italic">DASHBOARD USER</h1>
-            <span id="user-display" class="bg-white text-black px-4 font-bold"></span>
-        </div>
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 border-b-4 border-cyan-400 pb-6 gap-4">
+            <h1 class="text-4xl font-black italic neon-text uppercase">Provider Dashboard</h1>
+            <div class="flex items-center gap-4">
+                <div class="bg-white text-black px-4 py-1 font-black text-sm uppercase">User: <span id="user-display"></span></div>
+                <button onclick="location.reload()" class="bg-red-600 text-white px-4 py-1 font-bold text-xs">LOGOUT</button>
+            </div>
+        </header>
 
-        <div class="grid md:grid-cols-3 gap-6">
-            <div class="brutal-card p-6">
-                <p class="text-xs uppercase opacity-70">Saldo Anda</p>
-                <h2 class="text-4xl font-black mb-4">RP <span id="balance-display">0</span></h2>
-                <p class="text-xs uppercase opacity-70 mb-2">API KEY SAYA</p>
-                <input type="text" id="apikey-display" class="brutal-input text-[10px]" readonly>
+        <div class="grid lg:grid-cols-3 gap-8">
+            
+            <div class="space-y-6">
+                <div class="brutal-card p-6">
+                    <h2 class="font-bold text-sm mb-2 uppercase opacity-70">Saldo Akun</h2>
+                    <div class="text-5xl font-black mb-6 neon-text">RP <span id="balance-display">0</span></div>
+                    
+                    <h2 class="font-bold text-sm mb-2 uppercase opacity-70">API Key Anda</h2>
+                    <input type="text" id="apikey-display" class="brutal-input text-xs font-mono mb-2" readonly>
+                    <p class="text-[10px] italic text-gray-400">Gunakan key ini untuk integrasi website kamu.</p>
+                </div>
+
+                <div class="brutal-card p-6">
+                    <h2 class="font-bold text-sm mb-4 uppercase">Top Up Saldo</h2>
+                    <input type="number" id="topup-amt" class="brutal-input" placeholder="Min Rp 1.000">
+                    <button onclick="getQRIS()" class="brutal-btn bg-white text-black mb-4">Generate QRIS</button>
+                    
+                    <div id="qr-box" class="hidden text-center border-2 border-dashed border-white p-4">
+                        <img id="qr-img" class="mx-auto w-48 h-48 border-4 border-white mb-2">
+                        <p class="text-[10px] text-white">Scan & Bayar. Saldo otomatis masuk.</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="brutal-card p-6">
-                <h2 class="font-bold mb-4 uppercase">🧪 Test Kirim OTP</h2>
-                <input type="text" id="target-wa" class="brutal-input" placeholder="628xxxx (No WA kamu)">
-                <button onclick="testOTP()" class="brutal-btn bg-yellow-400 mb-4">Kirim & Cek OTP (Cost 10)</button>
-                <div id="test-res" class="text-center font-black text-2xl py-4 bg-zinc-900 border-2 border-dashed border-cyan-400">------</div>
-            </div>
-
-            <div class="brutal-card p-6">
-                <h2 class="font-bold mb-4 uppercase">Top Up Saldo</h2>
-                <input type="number" id="amt" class="brutal-input text-xs" placeholder="Min 500">
-                <button onclick="getQRIS()" class="brutal-btn bg-white text-black text-xs py-2 mb-4">Get QRIS</button>
-                <img id="qr-img" class="hidden mx-auto w-32 border-2 border-white mb-4">
+            <div class="brutal-card p-8">
+                <h2 class="text-2xl font-black mb-6 uppercase italic">🧪 Test Kirim OTP</h2>
+                <p class="text-xs mb-4 text-gray-300">Masukkan nomor WhatsApp target. Sistem akan menyuruh Termux mengirim pesan <code>Kode otp anda ****</code></p>
                 
-                <h2 class="font-bold mb-2 uppercase border-t border-cyan-800 pt-4">API Docs</h2>
-                <p class="text-[9px] font-mono text-gray-400">GET /api/get-otp?apikey=YOUR_KEY</p>
+                <label class="text-xs font-bold block mb-2">NOMOR WHATSAPP (628xxx)</label>
+                <input type="text" id="test-target" class="brutal-input text-xl" placeholder="62812345678">
+                
+                <button onclick="sendTestOTP()" id="btn-test" class="brutal-btn bg-yellow-400 hover:bg-white transition-all">Kirim OTP Sekarang</button>
+                
+                <div class="mt-8 p-6 bg-zinc-900 border-2 border-cyan-400">
+                    <p class="text-[10px] uppercase mb-2 text-center">Status Pengiriman</p>
+                    <div id="test-status" class="text-3xl font-black text-center py-2">READY</div>
+                </div>
             </div>
+
+            <div class="brutal-card p-6 bg-zinc-900">
+                <h2 class="font-bold mb-4 uppercase text-white">📑 Documentation</h2>
+                <p class="text-xs mb-4 text-gray-400">Agar website kamu bisa login pakai nomor WA ini, tembak API kami:</p>
+                
+                <div class="text-[11px] font-mono p-4 bg-black border border-zinc-700 text-green-400 mb-6 overflow-x-auto">
+                    // Request OTP (POST)<br>
+                    URL: /api/request-otp<br>
+                    Body: { "apikey": "KEY", "target": "628x" }<br><br>
+                    
+                    // Verifikasi OTP (GET)<br>
+                    URL: /api/get-otp?apikey=KEY
+                </div>
+
+                <div class="border-t border-zinc-700 pt-4">
+                    <h3 class="text-xs font-bold uppercase mb-2">Fitur Provider:</h3>
+                    <ul class="text-[10px] space-y-2 text-gray-300">
+                        <li>✅ WhatsApp Otomatis (Termux Push)</li>
+                        <li>✅ Saldo Realtime</li>
+                        <li>✅ Anti Delay System</li>
+                    </ul>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <script>
-        let myUser = {};
+        let userData = null;
 
-        async function auth() {
+        // 1. FUNGSI AUTH (LOGIN/REGISTER)
+        async function handleAuth() {
             const u = document.getElementById('u').value;
             const p = document.getElementById('p').value;
-            const res = await fetch('/api/auth', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({u, p}) });
-            const data = await res.json();
-            if(data.status) {
-                myUser = data.data;
-                document.getElementById('user-display').innerText = data.user;
-                document.getElementById('balance-display').innerText = myUser.balance;
-                document.getElementById('apikey-display').value = myUser.apikey;
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('dash-screen').classList.remove('hidden');
-            } else { alert(data.msg); }
+            if(!u || !p) return alert("Isi Username & Password!");
+
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ u, p })
+                });
+                const data = await res.json();
+                
+                if(data.status) {
+                    userData = data.data;
+                    document.getElementById('user-display').innerText = data.user;
+                    document.getElementById('balance-display').innerText = userData.balance;
+                    document.getElementById('apikey-display').value = userData.apikey;
+                    
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    document.getElementById('dash-screen').classList.remove('hidden');
+                } else {
+                    alert(data.msg);
+                }
+            } catch (e) { alert("Server Connection Failed!"); }
         }
 
-        async function testOTP() {
-            const wa = document.getElementById('target-wa').value;
-            if(!wa) return alert("Masukkan nomor WA!");
-            document.getElementById('test-res').innerText = "WAIT...";
-            
-            // Simulasi Instruksi: User harus kirim WA dulu ke nomor kamu
-            alert("Silahkan kirim pesan apapun ke nomor WA Provider kami, lalu klik OK.");
+        // 2. FUNGSI TEST OTP (TERMUX OTOMATIS KIRIM)
+        async function sendTestOTP() {
+            const target = document.getElementById('test-target').value;
+            const statusBox = document.getElementById('test-status');
+            const btn = document.getElementById('btn-test');
 
-            const res = await fetch(`/api/get-otp?apikey=${myUser.apikey}`);
-            const data = await res.json();
-            if(data.status) {
-                document.getElementById('test-res').innerText = data.otp;
-                document.getElementById('balance-display').innerText = data.sisa;
-            } else { alert(data.msg); document.getElementById('test-res').innerText = "FAIL"; }
+            if(!target || target.length < 10) return alert("Masukkan nomor WA yang valid (628xxx)!");
+            if(userData.balance < 10) return alert("Saldo tidak cukup! Minimal Rp 10");
+
+            statusBox.innerText = "SENDING...";
+            statusBox.className = "text-3xl font-black text-center py-2 text-yellow-400 animate-pulse";
+            btn.disabled = true;
+
+            try {
+                // Memberi perintah ke Vercel agar Termux mengirim pesan
+                const res = await fetch('/api/request-otp', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        apikey: userData.apikey, 
+                        target: target 
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if(data.status) {
+                    statusBox.innerText = "SUCCESS";
+                    statusBox.className = "text-3xl font-black text-center py-2 text-green-400";
+                    document.getElementById('balance-display').innerText = data.sisa || (userData.balance - 10);
+                    alert("Termux sedang mengirim WA: 'Kode otp anda " + data.otp + "'");
+                } else {
+                    statusBox.innerText = "FAILED";
+                    statusBox.className = "text-3xl font-black text-center py-2 text-red-500";
+                    alert(data.msg);
+                }
+            } catch (e) { 
+                statusBox.innerText = "ERROR";
+                alert("Gagal menghubungi server!"); 
+            } finally {
+                btn.disabled = false;
+            }
         }
 
+        // 3. FUNGSI GENERATE QRIS
         async function getQRIS() {
-            const amount = document.getElementById('amt').value;
-            const res = await fetch('/api/order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ amount }) });
-            const data = await res.json();
-            if(data.qr) { document.getElementById('qr-img').src = data.qr; document.getElementById('qr-img').classList.remove('hidden'); }
+            const amount = document.getElementById('topup-amt').value;
+            if(!amount || amount < 500) return alert("Minimal Rp 500!");
+
+            try {
+                const res = await fetch('/api/order', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ amount })
+                });
+                const data = await res.json();
+                
+                if(data.status && data.qr) {
+                    document.getElementById('qr-img').src = data.qr;
+                    document.getElementById('qr-box').classList.remove('hidden');
+                    alert("QRIS Berhasil Dibuat!");
+                } else {
+                    alert("Gagal membuat QRIS. Cek API Key Hokto!");
+                }
+            } catch (e) { alert("Payment Server Error!"); }
         }
+
+        // Support Enter Key
+        document.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter' && !document.getElementById('auth-screen').classList.contains('hidden')) handleAuth();
+        });
     </script>
 </body>
 </html>
