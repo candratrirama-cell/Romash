@@ -1,107 +1,58 @@
 const express = require("express");
 const axios = require("axios");
 const app = express();
-
 app.use(express.json());
 
-// --- KONFIGURASI KUNCI (DATA KAMU) ---
 const BIN_ID = "69cbcdc8aaba882197af4bcc";
 const MASTER_KEY = "$2a$10$go25lr52o.r3GKWOrNSUiO6Gdv52kcAcNS56vMiiIhlM5yX3X2ON6";
-const HOKTO_API_KEY = "91b24c8aeb3d364a80742a847797553b"; // API Key Hokto Kamu
-const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const HOKTO_KEY = "91b24c8aeb3d364a80742a847797553b";
 
-// Helper: Ambil Data dari JSONBin
-const getDb = async () => {
-    const res = await axios.get(BASE_URL, { headers: { "X-Master-Key": MASTER_KEY } });
-    return res.data.record;
-};
-
-// Helper: Simpan Data ke JSONBin
-const saveDb = async (newData) => {
-    await axios.put(BASE_URL, newData, {
-        headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY }
-    });
-};
-
-// [POST] Endpoint Login
-app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
+// --- ENDPOINT UNTUK DEVELOPER LAIN ---
+// Developer panggil ini: romash.vercel.app/api/get-latest?apikey=...
+app.get('/api/get-latest', async (req, res) => {
+    const { apikey } = req.query;
     try {
-        const db = await getDb();
-        const user = db.users[username];
-        if (user && user.password === password) {
-            res.json({ status: true, balance: user.balance });
-        } else {
-            res.json({ status: false, msg: "Login Gagal! Cek User/Pass." });
-        }
-    } catch (e) {
-        res.status(500).json({ status: false, msg: "Database Error" });
-    }
-});
-
-// [POST] Endpoint Buat QRIS (Top Up)
-app.post('/api/order', async (req, res) => {
-    const { userId, amount } = req.body;
-    const inv = "INV" + Date.now();
-    
-    try {
-        // Tembak API Hokto untuk Create QRIS
-        const response = await axios.post("https://hokto.my.id/produksi/payment/?api=create_qris", {
-            amount: amount,
-            partnerReferenceNo: inv
-        }, { 
-            headers: { 'X-API-KEY': HOKTO_API_KEY } 
+        const resDb = await axios.get(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { 
+            headers: { "X-Master-Key": MASTER_KEY } 
         });
+        const db = resDb.data.record;
 
-        // Ambil link QR dari respon Hokto
-        const qrData = response.data.qr_link || response.data.qr_code;
-        
-        if (qrData) {
-            res.json({ status: true, qr: qrData, inv: inv });
-        } else {
-            res.json({ status: false, msg: "Gagal generate QR dari Hokto" });
-        }
-    } catch (e) {
-        res.status(500).json({ status: false, msg: "Hokto API Error" });
-    }
+        if (!db.api_keys[apikey]) return res.json({ status: false, msg: "Invalid API Key" });
+
+        // Ambil OTP terakhir yang masuk
+        const otp = db.server.latest_otp;
+        res.json({ status: true, otp: otp.code, time: otp.timestamp });
+    } catch (e) { res.status(500).json({ error: "Cloud Down" }); }
 });
 
-// [GET] Endpoint Ambil OTP & Potong Saldo
-app.get('/api/get-otp', async (req, res) => {
-    const { userId } = req.query;
+// --- ENDPOINT UNTUK TOPUP QRIS ---
+app.post('/api/create-payment', async (req, res) => {
+    const { amount } = req.body;
     try {
-        const db = await getDb();
-        const user = db.users[userId];
-
-        if (!user) return res.json({ status: false, msg: "User tidak ditemukan" });
-        if (user.balance < 10) return res.json({ status: false, msg: "Saldo Kurang (Min Rp 10)" });
-
-        const otpData = db.server.latest_otp;
+        const resp = await axios.post("https://hokto.my.id/produksi/payment/?api=create_qris", {
+            amount: amount,
+            partnerReferenceNo: "INV" + Date.now()
+        }, { headers: { 'X-API-KEY': HOKTO_KEY } });
         
-        // Cek jika OTP ada dan masih baru (kurang dari 5 menit)
-        if (otpData && otpData.code && (Date.now() - otpData.timestamp < 300000)) {
-            user.balance -= 10; // Potong Saldo
-            await saveDb(db); // Simpan Perubahan
-            res.json({ status: true, otp: otpData.code, sisa: user.balance });
-        } else {
-            res.json({ status: false, msg: "OTP Belum Masuk atau Expired" });
-        }
-    } catch (e) {
-        res.status(500).json({ status: false, msg: "System Error" });
-    }
+        res.json({ status: true, qr: resp.data.qr_link || resp.data.qr_code });
+    } catch (e) { res.json({ status: false, msg: "Hokto Error" }); }
 });
 
-// [POST] Endpoint Terima OTP dari Termux
-app.post('/api/receive-otp', async (req, res) => {
+// --- ENDPOINT PENERIMA DARI TERMUX ---
+app.post('/api/webhook-wa', async (req, res) => {
     const { otp } = req.body;
     try {
-        const db = await getDb();
+        const resDb = await axios.get(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { 
+            headers: { "X-Master-Key": MASTER_KEY } 
+        });
+        let db = resDb.data.record;
         db.server.latest_otp = { code: otp, timestamp: Date.now() };
-        await saveDb(db);
-        res.json({ status: true });
-    } catch (e) {
-        res.status(500).json({ status: false });
-    }
+
+        await axios.put(`https://api.jsonbin.io/v3/b/${BIN_ID}`, db, {
+            headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY }
+        });
+        res.json({ status: "saved" });
+    } catch (e) { res.status(500).send("Err"); }
 });
 
 module.exports = app;
