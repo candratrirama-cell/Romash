@@ -1,121 +1,55 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoR 1.1 - Dashboard</title>
+    <title>GoR 1.1 Provider</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
-        body { background: #000; color: #00f2ff; font-family: 'Space Grotesk', sans-serif; }
-        .brutal-card { border: 4px solid #00f2ff; background: #050505; box-shadow: 10px 10px 0px #00f2ff; }
-        .brutal-input { background: #111; border: 3px solid #00f2ff; color: #fff; padding: 12px; width: 100%; outline: none; }
-        .brutal-btn { background: #00f2ff; color: #000; padding: 15px; width: 100%; font-weight: 900; text-transform: uppercase; box-shadow: 5px 5px 0px #fff; cursor: pointer; }
-        .brutal-btn:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #fff; }
-        .neon-text { text-shadow: 0 0 10px #00f2ff; }
-        .hidden { display: none; }
+        body { background: #000; color: #00f2ff; font-family: 'Courier New', Courier, monospace; }
+        .box { border: 5px solid #00f2ff; box-shadow: 10px 10px 0px #00f2ff; background: #050505; }
+        .btn { background: #00f2ff; color: #000; font-weight: 900; padding: 10px; width: 100%; border: none; cursor: pointer; }
+        input { background: #111; border: 2px solid #00f2ff; color: #fff; padding: 10px; width: 100%; margin-bottom: 10px; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
-
-    <div id="login-box" class="max-w-sm w-full brutal-card p-8">
-        <h1 class="text-4xl font-black mb-8 italic text-center neon-text">GoR 1.1<br>ACCESS</h1>
-        <input type="text" id="u" class="brutal-input mb-4" placeholder="USERNAME">
-        <input type="password" id="p" class="brutal-input mb-6" placeholder="PASSWORD">
-        <button onclick="login()" class="brutal-btn">Login System</button>
-    </div>
-
-    <div id="dashboard" class="max-w-md w-full brutal-card p-8 hidden">
-        <div class="flex justify-between mb-4">
-            <span class="font-bold italic">USER: <span id="display-u" class="text-white"></span></span>
-            <button onclick="location.reload()" class="text-red-500 font-bold underline">EXIT</button>
-        </div>
-
-        <div class="mb-6 border-b-4 border-cyan-400 pb-4 text-center">
-            <p class="text-xs uppercase opacity-70">Your Balance</p>
-            <div class="text-5xl font-black neon-text">RP <span id="display-b">0</span></div>
-        </div>
-
-        <div class="mb-8 p-4 border-2 border-dashed border-cyan-400">
-            <h3 class="text-sm font-bold mb-2 uppercase">Top Up Saldo (QRIS)</h3>
-            <input type="number" id="topup-amount" class="brutal-input mb-2 text-sm" placeholder="Min Rp 500">
-            <button onclick="getQRIS()" class="brutal-btn bg-white text-black text-xs py-2">Generate QRIS</button>
-            <div id="qr-area" class="mt-4 flex flex-col items-center hidden">
-                <img id="qr-img" src="" class="w-48 h-48 border-4 border-white">
-                <p class="text-[10px] mt-2 text-center">Scan & Bayar. Saldo masuk otomatis setelah dicek.</p>
+<body class="p-8">
+    <div class="max-w-md mx-auto box p-6">
+        <h1 class="text-2xl font-black italic mb-4">GoR 1.1 OTP PROVIDER</h1>
+        
+        <div class="mb-6">
+            <p class="text-xs mb-1">TOPUP SALDO DEVELOPER</p>
+            <input type="number" id="amt" placeholder="Amount (min 500)">
+            <button class="btn mb-4" onclick="bayar()">GENERATE QRIS</button>
+            <div id="qris-area" class="hidden text-center bg-white p-2">
+                <img id="qr-img" class="mx-auto w-48">
             </div>
         </div>
 
-        <div class="mb-4">
-            <button onclick="fetchOTP()" class="brutal-btn bg-yellow-400 text-black mb-4">Get OTP (10 RP)</button>
-            <div id="otp-display" class="text-4xl text-center font-bold py-4 border-2 border-white text-white italic">------</div>
+        <div class="border-t-2 border-cyan-500 pt-4">
+            <p class="text-xs mb-2">LATEST OTP FROM WA:</p>
+            <div id="otp-box" class="text-5xl font-black text-center py-4 bg-zinc-900 border-2 border-dashed border-cyan-400">----</div>
+            <button class="btn mt-4 bg-yellow-400" onclick="cekOTP()">REFRESH OTP</button>
         </div>
     </div>
 
     <script>
-        let currentUser = "";
-
-        // 1. LOGIN
-        async function login() {
-            const username = document.getElementById('u').value;
-            const password = document.getElementById('p').value;
-            try {
-                const res = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                const data = await res.json();
-                if (data.status) {
-                    currentUser = username;
-                    document.getElementById('display-u').innerText = username;
-                    document.getElementById('display-b').innerText = data.balance;
-                    document.getElementById('login-box').classList.add('hidden');
-                    document.getElementById('dashboard').classList.remove('hidden');
-                } else { alert(data.msg); }
-            } catch (e) { alert("Connection Failed!"); }
+        async function bayar() {
+            const amt = document.getElementById('amt').value;
+            const res = await fetch('/api/create-payment', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ amount: amt })
+            });
+            const data = await res.json();
+            if(data.qr) {
+                document.getElementById('qr-img').src = data.qr;
+                document.getElementById('qris-area').classList.remove('hidden');
+            } else { alert("Gagal!"); }
         }
 
-        // 2. GENERATE QRIS (HOKTO)
-        async function getQRIS() {
-            const amount = document.getElementById('topup-amount').value;
-            if (amount < 500) return alert("Minimal Rp 500!");
-            
-            try {
-                const res = await fetch('/api/order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUser, amount: amount })
-                });
-                const data = await res.json();
-                if (data.qr) {
-                    document.getElementById('qr-img').src = data.qr;
-                    document.getElementById('qr-area').classList.remove('hidden');
-                } else { alert("Gagal mengambil QRIS"); }
-            } catch (e) { alert("API QRIS Error"); }
+        async function cekOTP() {
+            const res = await fetch('/api/get-latest?apikey=KEY-12345');
+            const data = await res.json();
+            document.getElementById('otp-box').innerText = data.otp || "WAIT";
         }
-
-        // 3. AMBIL OTP
-        async function fetchOTP() {
-            const otpBox = document.getElementById('otp-display');
-            otpBox.innerText = "WAIT...";
-            try {
-                const res = await fetch(`/api/get-otp?userId=${currentUser}`);
-                const data = await res.json();
-                if (data.status) {
-                    otpBox.innerText = data.otp;
-                    document.getElementById('display-b').innerText = data.sisa;
-                } else {
-                    otpBox.innerText = "------";
-                    alert(data.msg);
-                }
-            } catch (e) { alert("API OTP Error"); }
-        }
-
-        // Login dengan Enter
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !document.getElementById('login-box').classList.contains('hidden')) login();
-        });
     </script>
 </body>
 </html>
