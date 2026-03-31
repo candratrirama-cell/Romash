@@ -1,32 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>OTP Publisher Dash</title>
+    <meta charset="UTF-8">
+    <title>GoR 1.1 - OTP Publisher</title>
     <style>
-        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
-        .box { border: 4px solid #0f0; padding: 20px; box-shadow: 10px 10px 0px #0f0; max-width: 400px; margin: auto; }
-        input { width: 90%; padding: 10px; margin: 10px 0; border: 2px solid #0f0; background: #000; color: #0f0; }
-        button { background: #0f0; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; }
+        :root { --neon: #00ff00; --bg: #000; }
+        body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; padding: 40px; }
+        .card { border: 5px solid var(--neon); padding: 30px; box-shadow: 15px 15px 0px var(--neon); max-width: 500px; margin: auto; }
+        input { width: 100%; background: #111; border: 2px solid var(--neon); color: var(--neon); padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        button { width: 100%; background: var(--neon); color: #000; border: none; padding: 15px; font-weight: 900; cursor: pointer; text-transform: uppercase; }
+        .code-box { background: #111; padding: 10px; border-left: 5px solid var(--neon); font-size: 12px; margin-top: 10px; overflow-x: auto; }
     </style>
 </head>
 <body>
-    <div class="box" id="loginBox">
-        <h2>LOGIN PUBLISHER</h2>
-        <input type="text" id="user" placeholder="Username">
-        <input type="password" id="pass" placeholder="Password">
-        <button onclick="login()">ENTER</button>
+
+    <div class="card" id="loginArea">
+        <h1>ACCESS GRANTED?</h1>
+        <input type="text" id="user" placeholder="USERNAME">
+        <input type="password" id="pass" placeholder="PASSWORD">
+        <button onclick="doLogin()">LOGIN</button>
     </div>
 
-    <div class="box" id="dashBox" style="display:none;">
-        <h2>SEND OTP</h2>
-        <input type="text" id="target" placeholder="628xxxx">
-        <input type="text" id="otp" placeholder="Kode OTP">
-        <input type="text" id="termux" placeholder="URL Ngrok Termux">
-        <button onclick="send()">SEND VIA WHATSAPP</button>
+    <div class="card" id="dashArea" style="display:none;">
+        <h1>YOUR API KEY</h1>
+        <div class="code-box" id="keyDisplay">LOADING...</div>
+        
+        <h3>ENDPOINT URL</h3>
+        <div class="code-box">https://your-vercel-app.vercel.app/api/otp</div>
+
+        <h3>DOCS (JSON POST)</h3>
+        <pre class="code-box">
+{
+  "apikey": "YOUR_KEY",
+  "number": "628xxx",
+  "message": "Kode OTP: 1234"
+}
+        </pre>
     </div>
 
     <script>
-        async function login() {
+        async function doLogin() {
             const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -34,19 +47,10 @@
             });
             const data = await res.json();
             if(data.success) {
-                loginBox.style.display = 'none';
-                dashBox.style.display = 'block';
-            } else { alert("Gagal!"); }
-        }
-
-        async function send() {
-            const res = await fetch('/api/send-otp', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({number: target.value, otp: otp.value, termux_url: termux.value})
-            });
-            const data = await res.json();
-            alert(data.status ? "Terkirim!" : "Gagal!");
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('dashArea').style.display = 'block';
+                document.getElementById('keyDisplay').innerText = data.apikey;
+            } else { alert("WRONG CREDENTIALS!"); }
         }
     </script>
 </body>
