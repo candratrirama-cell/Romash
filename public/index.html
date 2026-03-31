@@ -1,54 +1,134 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>GoR 1.1 Provider</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoR 1.1 - OTP Provider Service</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #000; color: #00f2ff; font-family: 'Courier New', Courier, monospace; }
-        .box { border: 5px solid #00f2ff; box-shadow: 10px 10px 0px #00f2ff; background: #050505; }
-        .btn { background: #00f2ff; color: #000; font-weight: 900; padding: 10px; width: 100%; border: none; cursor: pointer; }
-        input { background: #111; border: 2px solid #00f2ff; color: #fff; padding: 10px; width: 100%; margin-bottom: 10px; }
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
+        body { background: #000; color: #00f2ff; font-family: 'Space Grotesk', sans-serif; }
+        .brutal-card { border: 4px solid #00f2ff; background: #050505; box-shadow: 10px 10px 0px #00f2ff; margin-bottom: 2rem; }
+        .neon-text { text-shadow: 0 0 10px #00f2ff; }
+        .code-block { background: #111; border-left: 5px solid #00f2ff; padding: 15px; font-family: monospace; color: #fff; font-size: 0.8rem; overflow-x: auto; }
+        .tab-btn { padding: 10px 20px; border: 2px solid #00f2ff; cursor: pointer; font-weight: bold; }
+        .tab-btn.active { background: #00f2ff; color: #000; }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="p-8">
-    <div class="max-w-md mx-auto box p-6">
-        <h1 class="text-2xl font-black italic mb-4">GoR 1.1 OTP PROVIDER</h1>
-        
-        <div class="mb-6">
-            <p class="text-xs mb-1">TOPUP SALDO DEVELOPER</p>
-            <input type="number" id="amt" placeholder="Amount (min 500)">
-            <button class="btn mb-4" onclick="bayar()">GENERATE QRIS</button>
-            <div id="qris-area" class="hidden text-center bg-white p-2">
-                <img id="qr-img" class="mx-auto w-48">
+<body class="p-4 md:p-10">
+
+    <header class="text-center mb-10">
+        <h1 class="text-5xl font-black italic neon-text">GoR 1.1 OTP PROVIDER</h1>
+        <p class="text-white opacity-70">Solusi API OTP WhatsApp untuk Developer Website</p>
+    </header>
+
+    <div class="flex justify-center gap-4 mb-8">
+        <div id="btn-dash" class="tab-btn active" onclick="switchTab('dash')">DASHBOARD</div>
+        <div id="btn-docs" class="tab-btn" onclick="switchTab('docs')">API DOCS</div>
+    </div>
+
+    <div id="section-dash" class="max-w-4xl mx-auto">
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="brutal-card p-6 text-center">
+                <h2 class="text-xl mb-4 uppercase">Realtime OTP Monitor</h2>
+                <div id="otp-view" class="text-6xl font-black py-8 bg-zinc-900 border-2 border-dashed border-cyan-400 mb-4 text-white">------</div>
+                <button onclick="getLatestOTP()" class="w-full bg-yellow-400 text-black font-black py-3 uppercase hover:bg-white transition">Refresh Server</button>
+            </div>
+
+            <div class="brutal-card p-6">
+                <h2 class="text-xl mb-4 uppercase">Generate QRIS Topup</h2>
+                <input type="number" id="amt" class="w-full bg-zinc-900 border-2 border-cyan-400 p-3 mb-4 text-white outline-none" placeholder="Masukkan Nominal (Min 500)">
+                <button onclick="createQRIS()" class="w-full bg-white text-black font-black py-3 uppercase mb-4">Dapatkan QRIS</button>
+                <div id="qris-box" class="hidden flex flex-col items-center">
+                    <img id="qris-img" src="" class="w-40 h-40 border-4 border-white mb-2">
+                    <p class="text-[10px] text-white">Scan untuk isi saldo API kamu.</p>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="border-t-2 border-cyan-500 pt-4">
-            <p class="text-xs mb-2">LATEST OTP FROM WA:</p>
-            <div id="otp-box" class="text-5xl font-black text-center py-4 bg-zinc-900 border-2 border-dashed border-cyan-400">----</div>
-            <button class="btn mt-4 bg-yellow-400" onclick="cekOTP()">REFRESH OTP</button>
+    <div id="section-docs" class="max-w-4xl mx-auto hidden">
+        <div class="brutal-card p-8">
+            <h2 class="text-2xl font-black mb-4">INTEGRASI API</h2>
+            <p class="mb-6 text-white italic">"Pasang fitur login nomor WA di web kamu dengan 1 baris kode API."</p>
+
+            <h3 class="text-cyan-400 font-bold mb-2 uppercase">1. Endpoint Ambil OTP</h3>
+            <p class="text-xs mb-2">Gunakan metode GET untuk menarik OTP terakhir dari server GoR 1.1.</p>
+            <div class="code-block mb-6">
+                GET https://romash.vercel.app/api/get-latest?apikey=YOUR_API_KEY
+            </div>
+
+            <h3 class="text-cyan-400 font-bold mb-2 uppercase">2. Contoh Penggunaan (JavaScript)</h3>
+            <div class="code-block mb-6">
+async function checkOTP() {<br>
+&nbsp;&nbsp;const res = await fetch('https://romash.vercel.app/api/get-latest?apikey=YOUR_KEY');<br>
+&nbsp;&nbsp;const data = await res.json();<br>
+&nbsp;&nbsp;if(data.status) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.log("Kode OTP anda adalah: " + data.otp);<br>
+&nbsp;&nbsp;}<br>
+}
+            </div>
+
+            <h3 class="text-cyan-400 font-bold mb-2 uppercase">3. Cara Kerja</h3>
+            <ul class="list-disc list-inside text-sm text-white space-y-2">
+                <li>User di web kamu klik "Kirim OTP".</li>
+                <li>Web kamu menyuruh user kirim chat ke nomor WA Provider.</li>
+                <li>Termux Provider menangkap angka dan mengirim ke Vercel.</li>
+                <li>Web kamu melakukan <b>polling/check</b> ke endpoint kami setiap 3 detik sampai data muncul.</li>
+            </ul>
         </div>
     </div>
 
     <script>
-        async function bayar() {
-            const amt = document.getElementById('amt').value;
-            const res = await fetch('/api/create-payment', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ amount: amt })
-            });
-            const data = await res.json();
-            if(data.qr) {
-                document.getElementById('qr-img').src = data.qr;
-                document.getElementById('qris-area').classList.remove('hidden');
-            } else { alert("Gagal!"); }
+        // Logika Tab
+        function switchTab(type) {
+            if(type === 'dash') {
+                document.getElementById('section-dash').classList.remove('hidden');
+                document.getElementById('section-docs').classList.add('hidden');
+                document.getElementById('btn-dash').classList.add('active');
+                document.getElementById('btn-docs').classList.remove('active');
+            } else {
+                document.getElementById('section-dash').classList.add('hidden');
+                document.getElementById('section-docs').classList.remove('hidden');
+                document.getElementById('btn-dash').classList.remove('active');
+                document.getElementById('btn-docs').classList.add('active');
+            }
         }
 
-        async function cekOTP() {
-            const res = await fetch('/api/get-latest?apikey=KEY-12345');
-            const data = await res.json();
-            document.getElementById('otp-box').innerText = data.otp || "WAIT";
+        // Fungsi Ambil OTP Terbaru (Dashboard Admin)
+        async function getLatestOTP() {
+            const view = document.getElementById('otp-view');
+            view.innerText = "CHCK...";
+            try {
+                // Menggunakan apikey default atau bypass untuk admin
+                const res = await fetch('/api/get-latest?apikey=KEY-12345'); 
+                const data = await res.json();
+                if(data.status && data.otp) {
+                    view.innerText = data.otp;
+                } else {
+                    view.innerText = "NONE";
+                }
+            } catch (e) { view.innerText = "ERR"; }
+        }
+
+        // Fungsi Create QRIS
+        async function createQRIS() {
+            const amount = document.getElementById('amt').value;
+            if(!amount || amount < 500) return alert("Min Rp 500");
+            
+            try {
+                const res = await fetch('/api/create-payment', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ amount })
+                });
+                const data = await res.json();
+                if(data.qr) {
+                    document.getElementById('qris-img').src = data.qr;
+                    document.getElementById('qris-box').classList.remove('hidden');
+                }
+            } catch (e) { alert("API QRIS Gagal!"); }
         }
     </script>
 </body>
