@@ -1,80 +1,58 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Jasa OTP Dashboard</title>
+    <title>GoR 1.1 - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #000; color: #0f0; font-family: monospace; }
-        .card { border: 4px solid #0f0; box-shadow: 10px 10px 0px #0f0; background: #111; }
-        input { background: #222; border: 2px solid #0f0; padding: 10px; color: #fff; width: 100%; }
-        button { background: #0f0; color: #000; font-weight: bold; padding: 10px 20px; cursor: pointer; }
-        button:hover { background: #fff; }
+        body { background: #000; color: #00f2ff; font-family: monospace; }
+        .brutal { border: 4px solid #00f2ff; box-shadow: 8px 8px 0px #00f2ff; background: #050505; }
+        input { background: #111; border: 2px solid #00f2ff; padding: 10px; width: 100%; color: #fff; margin-bottom: 10px; }
+        button { background: #00f2ff; color: #000; padding: 10px; width: 100%; font-weight: bold; border: none; cursor: pointer; }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="p-5">
-    <div class="max-w-md mx-auto card p-6">
-        <h1 class="text-2xl mb-4">OTP GATEWAY BY @MARAMADHONA</h1>
-        
-        <div id="login-section">
-            <input type="text" id="userId" placeholder="Masukkan Nama/ID Anda">
-            <button class="mt-3 w-full" onclick="login()">MASUK</button>
-        </div>
+<body class="p-6">
+    <div id="login-form" class="max-w-sm mx-auto brutal p-6 mt-10">
+        <h1 class="text-2xl mb-4 font-black italic">GoR 1.1 LOGIN</h1>
+        <input type="text" id="user" placeholder="USERNAME">
+        <input type="password" id="pass" placeholder="PASSWORD">
+        <button onclick="login()">ENTER SYSTEM</button>
+    </div>
 
-        <div id="main-section" class="hidden">
-            <p class="text-xl">ID: <span id="displayId"></span></p>
-            <p class="text-xl mb-4">SALDO: Rp <span id="balance">0</span></p>
-            
-            <hr class="border-green-500 mb-4">
-            
-            <h2 class="mb-2">TOP UP SALDO</h2>
-            <input type="number" id="amount" placeholder="Min Rp 500">
-            <button class="mt-2 w-full" onclick="topup()">BELI QRIS</button>
-            <div id="qr-area" class="mt-4"></div>
-
-            <hr class="border-green-500 my-4">
-            
-            <button class="w-full bg-blue-500 text-white" onclick="getOTP()">AMBIL OTP (Rp 10)</button>
-            <div id="otp-result" class="mt-4 text-center text-3xl font-bold text-yellow-400"></div>
-        </div>
+    <div id="dash" class="max-w-md mx-auto brutal p-6 mt-10 hidden">
+        <h2 class="text-xl">ID: <span id="uid"></span></h2>
+        <h2 class="text-3xl font-black mb-4">BALANCE: RP <span id="ubal"></span></h2>
+        <button onclick="getOTP()" class="bg-yellow-400">AMBIL OTP (RP 10)</button>
+        <div id="otp-res" class="mt-4 text-4xl text-center font-bold"></div>
     </div>
 
     <script>
+        let currentId = "";
         async function login() {
-            const id = document.getElementById('userId').value;
-            if(!id) return alert("Isi ID!");
-            const res = await fetch(`/api/user/${id}`);
-            const data = await res.json();
-            document.getElementById('balance').innerText = data.balance;
-            document.getElementById('displayId').innerText = id;
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('main-section').classList.remove('hidden');
-        }
-
-        async function topup() {
-            const userId = document.getElementById('displayId').innerText;
-            const amount = document.getElementById('amount').value;
-            const res = await fetch('/api/order', {
+            const username = document.getElementById('user').value;
+            const password = document.getElementById('pass').value;
+            const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ userId, amount })
+                body: JSON.stringify({ username, password })
             });
             const data = await res.json();
-            if(data.qr) {
-                document.getElementById('qr-area').innerHTML = `<img src="${data.qr}" class="mx-auto"> <p class="text-center mt-2">Scan & Bayar, lalu Refresh</p>`;
-            }
+            if(data.status) {
+                currentId = username;
+                document.getElementById('uid').innerText = username;
+                document.getElementById('ubal').innerText = data.balance;
+                document.getElementById('login-form').classList.add('hidden');
+                document.getElementById('dash').classList.remove('hidden');
+            } else { alert(data.msg); }
         }
 
         async function getOTP() {
-            const userId = document.getElementById('displayId').innerText;
-            const res = await fetch(`/api/get-otp?userId=${userId}`);
+            const res = await fetch(`/api/get-otp?userId=${currentId}`);
             const data = await res.json();
             if(data.status) {
-                document.getElementById('otp-result').innerText = data.otp;
-                login(); // Update saldo
-            } else {
-                alert(data.msg);
-            }
+                document.getElementById('otp-res').innerText = data.otp;
+                document.getElementById('ubal').innerText = data.sisa;
+            } else { alert(data.msg); }
         }
     </script>
 </body>
