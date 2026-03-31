@@ -3,115 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoR 1.1 - Login Provider</title>
+    <title>GoR 1.1 - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
-        body { background: #000; color: #00f2ff; font-family: 'Space Grotesk', sans-serif; overflow-x: hidden; }
-        
-        /* Gaya Kartu Neo-Brutalism */
-        .card { border: 4px solid #00f2ff; background: #0a0a0a; box-shadow: 10px 10px 0px #00f2ff; padding: 2rem; }
-        .inp { background: #111; border: 2px solid #00f2ff; color: #fff; padding: 12px; width: 100%; outline: none; margin-bottom: 15px; font-weight: bold; }
-        .inp:focus { background: #1a1a1a; box-shadow: 0 0 10px #00f2ff; }
-        
-        /* Tombol Utama */
-        .btn-login { background: #00f2ff; color: #000; font-weight: 900; padding: 15px; width: 100%; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; transition: 0.2s; }
-        .btn-login:hover { background: #fff; transform: scale(1.02); }
-        .btn-login:active { transform: translate(5px, 5px); box-shadow: none; }
-
+        body { background: #000; color: #00f2ff; font-family: 'Space Grotesk', sans-serif; }
+        .card { border: 4px solid #00f2ff; background: #080808; box-shadow: 8px 8px 0px #00f2ff; margin-bottom: 20px; padding: 20px; }
+        .inp { background: #111; border: 2px solid #00f2ff; color: #fff; padding: 10px; width: 100%; outline: none; margin-bottom: 10px; }
+        .btn { background: #00f2ff; color: #000; font-weight: 900; padding: 10px; width: 100%; cursor: pointer; text-transform: uppercase; }
         .hidden { display: none; }
-        .neon-text { text-shadow: 0 0 15px #00f2ff; }
+        pre { background: #111; padding: 10px; border-left: 4px solid #00f2ff; color: #fff; font-size: 10px; overflow-x: auto; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="p-6">
 
-    <div id="auth-screen" class="max-w-md w-full card text-center">
-        <h1 class="text-5xl font-black italic mb-2 neon-text">GoR 1.1</h1>
-        <p class="text-xs uppercase tracking-widest mb-8 opacity-60">OTP Gateway Access Console</p>
-        
-        <div class="text-left">
-            <label class="text-[10px] uppercase font-bold ml-1">Username</label>
-            <input type="text" id="user-input" class="inp" placeholder="ADMIN / USERNAME">
-            
-            <label class="text-[10px] uppercase font-bold ml-1">Password</label>
-            <input type="password" id="pass-input" class="inp" placeholder="******">
-            
-            <button onclick="handleLogin()" id="btn-submit" class="btn-login mt-4">
-                Masuk Ke System
-            </button>
-        </div>
-        <p id="error-msg" class="text-red-500 text-xs mt-4 font-bold hidden uppercase">Kombinasi Salah!</p>
+    <div id="login-screen" class="max-w-md mx-auto mt-20 card">
+        <h1 class="text-3xl font-black italic text-center mb-6">LOGIN GOR 1.1</h1>
+        <input type="text" id="u" class="inp" placeholder="USERNAME">
+        <input type="password" id="p" class="inp" placeholder="PASSWORD">
+        <button onclick="handleLogin()" class="btn">MASUK</button>
     </div>
 
-    <div id="main-dash" class="max-w-5xl w-full hidden">
-        <div class="card">
-            <div class="flex justify-between items-center border-b-4 border-cyan-400 pb-4 mb-6">
-                <h2 class="text-2xl font-black italic">DASHBOARD_V1.1</h2>
-                <button onclick="location.reload()" class="bg-red-600 text-white px-4 py-1 font-bold text-xs hover:bg-white hover:text-black">LOGOUT</button>
-            </div>
-            
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="p-4 border-2 border-dashed border-cyan-800">
-                    <p class="text-xs uppercase">API KEY ANDA:</p>
-                    <code id="api-key-view" class="block bg-zinc-900 p-2 my-2 text-white">G-LOADING...</code>
-                    <p class="text-xs uppercase mt-4">SALDO: <span id="balance-view" class="text-yellow-400">0</span></p>
-                </div>
+    <div id="dash-screen" class="max-w-6xl mx-auto hidden">
+        <div class="flex justify-between items-center mb-10 border-b-4 border-cyan-400 pb-4">
+            <h1 class="text-2xl font-black italic uppercase">Provider Console</h1>
+            <button onclick="location.reload()" class="bg-red-600 text-white px-4 py-1 text-xs">LOGOUT</button>
+        </div>
 
-                <div class="p-4 border-2 border-dashed border-cyan-800">
-                    <input type="text" id="no-wa" class="inp mb-2" placeholder="628xxx">
-                    <button onclick="testKirim()" class="btn-login bg-white text-black text-xs py-2">Test Kirim OTP</button>
-                </div>
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="card">
+                <h2 class="font-bold mb-2 uppercase text-xs">API KEY ANDA</h2>
+                <input type="text" id="view-key" class="inp text-[10px]" readonly>
+                <h2 class="font-bold mb-2 uppercase text-xs">SALDO</h2>
+                <div class="text-3xl font-black text-yellow-400">RP <span id="view-bal">0</span></div>
+            </div>
+
+            <div class="card">
+                <h2 class="font-bold mb-4 uppercase text-xs">🧪 Test & Validasi OTP</h2>
+                <input type="text" id="target-wa" class="inp" placeholder="628xxxx (No WA)">
+                <button onclick="requestOTP()" id="btn-send" class="btn bg-white mb-4">1. Kirim OTP</button>
+                
+                <input type="text" id="otp-val" class="inp" placeholder="Masukkan Kode dari WA">
+                <button onclick="verifyOTP()" id="btn-ver" class="btn bg-yellow-400">2. Cek Validitas</button>
+                <div id="res-val" class="mt-4 text-center font-bold">---</div>
+            </div>
+
+            <div class="card">
+                <h2 class="font-bold mb-4 uppercase text-xs">📑 API Documentation</h2>
+                <p class="text-[10px] mb-2 opacity-70">Gunakan endpoint ini di kodinganmu:</p>
+                <p class="text-[9px] font-bold text-cyan-400">REQUEST OTP (POST):</p>
+                <pre>/api/request-otp</pre>
+                <p class="text-[9px] font-bold text-cyan-400 mt-2">VERIFIKASI (POST):</p>
+                <pre>/api/verify-otp</pre>
             </div>
         </div>
     </div>
 
     <script>
-        // FUNGSI LOGIN
+        let userData = {};
+
         async function handleLogin() {
-            const u = document.getElementById('user-input').value;
-            const p = document.getElementById('pass-input').value;
-            const btn = document.getElementById('btn-submit');
-            const error = document.getElementById('error-msg');
-
-            if(!u || !p) return alert("Isi dulu bos!");
-
-            btn.innerText = "MENGHUBUNGKAN...";
-            btn.disabled = true;
-            error.classList.add('hidden');
-
-            try {
-                const res = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ u, p })
-                });
-                const data = await res.json();
-
-                if(data.status) {
-                    // Berhasil Login: Sembunyikan Login, Munculkan Dash
-                    document.getElementById('auth-screen').classList.add('hidden');
-                    document.getElementById('main-dash').classList.remove('hidden');
-                    document.body.classList.remove('items-center'); // Biar dash ke atas
-                    
-                    // Isi Data
-                    document.getElementById('api-key-view').innerText = data.data.apikey;
-                    document.getElementById('balance-view').innerText = "Rp " + data.data.balance;
-                } else {
-                    error.innerText = data.msg;
-                    error.classList.remove('hidden');
-                }
-            } catch (e) {
-                alert("Server Vercel kamu belum ready atau mati!");
-            } finally {
-                btn.innerText = "Masuk Ke System";
-                btn.disabled = false;
-            }
+            const u = document.getElementById('u').value;
+            const p = document.getElementById('p').value;
+            const res = await fetch('/api/auth', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({u, p}) });
+            const data = await res.json();
+            if(data.status) {
+                userData = data.data;
+                document.getElementById('view-key').value = userData.apikey;
+                document.getElementById('view-bal').innerText = userData.balance;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('dash-screen').classList.remove('hidden');
+            } else alert(data.msg);
         }
 
-        // FUNGSI TEST (Contoh)
-        async function testKirim() {
-            alert("Memerintahkan Termux kirim WA...");
-            // Logika request-otp kamu di sini...
+        async function requestOTP() {
+            const target = document.getElementById('target-wa').value;
+            if(!target) return alert("Isi nomor WA!");
+            const res = await fetch('/api/request-otp', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ apikey: userData.apikey, target })
+            });
+            const data = await res.json();
+            if(data.status) alert("Termux akan mengirim WA!");
+        }
+
+        async function verifyOTP() {
+            const code = document.getElementById('otp-val').value;
+            const res = await fetch('/api/verify-otp', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ code_input: code })
+            });
+            const data = await res.json();
+            const resDiv = document.getElementById('res-val');
+            resDiv.innerText = data.msg;
+            resDiv.style.color = data.status ? "#00ff00" : "#ff0000";
         }
     </script>
 </body>
