@@ -1,6 +1,6 @@
 {
-  "name": "romash-otp",
-  "version": "1.1.0",
+  "name": "gor-otp-gateway",
+  "version": "1.0.0",
   "main": "api/index.js",
   "dependencies": {
     "axios": "^1.6.0",
