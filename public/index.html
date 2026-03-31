@@ -1,112 +1,52 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoR 1.1 - OTP System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>OTP Publisher Dash</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap');
-        body { background: #000; color: #00f2ff; font-family: 'Space Grotesk', sans-serif; padding: 20px; }
-        .card { border: 4px solid #00f2ff; background: #0a0a0a; box-shadow: 8px 8px 0px #00f2ff; padding: 20px; margin-bottom: 20px; }
-        .inp { background: #111; border: 2px solid #00f2ff; color: #fff; padding: 12px; width: 100%; outline: none; margin-bottom: 10px; }
-        .btn { background: #00f2ff; color: #000; font-weight: 900; padding: 12px; width: 100%; cursor: pointer; text-transform: uppercase; border: none; }
-        .btn:active { transform: translate(4px, 4px); }
-        .hidden { display: none; }
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
+        .box { border: 4px solid #0f0; padding: 20px; box-shadow: 10px 10px 0px #0f0; max-width: 400px; margin: auto; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border: 2px solid #0f0; background: #000; color: #0f0; }
+        button { background: #0f0; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div id="auth-box" class="max-w-md mx-auto mt-20 card">
-        <h1 class="text-3xl font-black mb-6 text-center italic neon-text">GoR 1.1 LOGIN</h1>
-        <input type="text" id="u" class="inp" placeholder="USERNAME">
-        <input type="password" id="p" class="inp" placeholder="PASSWORD">
-        <button onclick="handleLogin()" class="btn" id="login-trigger">MASUK KE SISTEM</button>
+    <div class="box" id="loginBox">
+        <h2>LOGIN PUBLISHER</h2>
+        <input type="text" id="user" placeholder="Username">
+        <input type="password" id="pass" placeholder="Password">
+        <button onclick="login()">ENTER</button>
     </div>
 
-    <div id="dash" class="max-w-6xl mx-auto hidden">
-        <div class="flex justify-between items-center mb-6 border-b-2 border-cyan-400 pb-4">
-            <h1 class="text-xl font-bold italic">PROVIDER CONSOLE</h1>
-            <span id="user-tag" class="bg-white text-black px-2 text-[10px] font-bold"></span>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-6">
-            <div class="card">
-                <h2 class="text-xs font-bold mb-2 uppercase">💰 Saldo & Deposit</h2>
-                <div class="text-4xl font-black mb-4">RP <span id="bal-text">0</span></div>
-                <input type="number" id="dep-amt" class="inp" placeholder="Jumlah Deposit">
-                <button onclick="doDeposit()" class="btn bg-white text-black mb-4">ISI SALDO</button>
-                <div id="qr-box" class="hidden text-center border-t border-cyan-900 pt-4">
-                    <img id="qr-img" class="mx-auto w-40 border-2 border-white mb-2">
-                    <p class="text-[8px] opacity-60">Scan QRIS di atas</p>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2 class="text-xs font-bold mb-2 uppercase">🧪 Test OTP WA</h2>
-                <input type="text" id="wa-no" class="inp" placeholder="628xxxx">
-                <button onclick="reqOTP()" class="btn bg-yellow-400">Kirim OTP</button>
-                <div id="otp-res" class="mt-4 text-center text-xs font-bold">---</div>
-            </div>
-
-            <div class="card">
-                <h2 class="text-xs font-bold mb-2 uppercase">📑 API Keys</h2>
-                <input type="text" id="key-view" class="inp text-[10px]" readonly>
-                <p class="text-[9px] opacity-70 italic">Gunakan key ini untuk integrasi API.</p>
-            </div>
-        </div>
+    <div class="box" id="dashBox" style="display:none;">
+        <h2>SEND OTP</h2>
+        <input type="text" id="target" placeholder="628xxxx">
+        <input type="text" id="otp" placeholder="Kode OTP">
+        <input type="text" id="termux" placeholder="URL Ngrok Termux">
+        <button onclick="send()">SEND VIA WHATSAPP</button>
     </div>
 
     <script>
-        let myData = {};
-
-        async function handleLogin() {
-            const u = document.getElementById('u').value;
-            const p = document.getElementById('p').value;
-            if(!u || !p) return alert("Lengkapi data!");
-
-            try {
-                const res = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ u, p })
-                });
-                const data = await res.json();
-                if(data.status) {
-                    myData = data.data;
-                    document.getElementById('user-tag').innerText = data.user;
-                    document.getElementById('bal-text').innerText = data.data.balance;
-                    document.getElementById('key-view').value = data.data.apikey;
-                    document.getElementById('auth-box').classList.add('hidden');
-                    document.getElementById('dash').classList.remove('hidden');
-                } else { alert(data.msg); }
-            } catch (e) { alert("Server Vercel Error!"); }
-        }
-
-        async function doDeposit() {
-            const amt = document.getElementById('dep-amt').value;
-            if(!amt || amt < 500) return alert("Minimal Rp 500!");
-            const res = await fetch('/api/deposit', {
+        async function login() {
+            const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ amount: amt })
+                body: JSON.stringify({username: user.value, password: pass.value})
             });
             const data = await res.json();
-            if(data.status) {
-                document.getElementById('qr-img').src = data.qr;
-                document.getElementById('qr-box').classList.remove('hidden');
-            } else { alert("Gagal koneksi Hokto!"); }
+            if(data.success) {
+                loginBox.style.display = 'none';
+                dashBox.style.display = 'block';
+            } else { alert("Gagal!"); }
         }
 
-        async function reqOTP() {
-            const target = document.getElementById('wa-no').value;
-            const res = await fetch('/api/request-otp', {
+        async function send() {
+            const res = await fetch('/api/send-otp', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ apikey: myData.apikey, target })
+                body: JSON.stringify({number: target.value, otp: otp.value, termux_url: termux.value})
             });
             const data = await res.json();
-            document.getElementById('otp-res').innerText = data.msg;
+            alert(data.status ? "Terkirim!" : "Gagal!");
         }
     </script>
 </body>
