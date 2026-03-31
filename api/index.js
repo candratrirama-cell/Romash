@@ -1,65 +1,61 @@
-const admin = require("firebase-admin");
 const express = require("express");
 const axios = require("axios");
 const app = express();
-
 app.use(express.json());
 
-// --- CONFIG ---
-const HOKTO_KEY = "91b24c8aeb3d364a80742a847797553b";
-const serviceAccount = require("../serviceAccountKey.json");
+const BIN_ID = "69cbcdc8aaba882197af4bcc";
+const MASTER_KEY = "$2a$10$go25lr52o.r3GKWOrNSUiO6Gdv52kcAcNS56vMiiIhlM5yX3X2ON6";
+const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        databaseURL: "https://my-apibase-default-rtdb.asia-southeast1.firebasedatabase.app/"
+// Helper: Ambil Data
+const getDb = async () => {
+    const res = await axios.get(BASE_URL, { headers: { "X-Master-Key": MASTER_KEY } });
+    return res.data.record;
+};
+
+// Helper: Simpan Data
+const saveDb = async (newData) => {
+    await axios.put(BASE_URL, newData, {
+        headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY }
     });
-}
-const db = admin.database();
+};
 
-// [ENDPOINT 1] Terima OTP dari Termux
+// Endpoint Login
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    const db = await getDb();
+    const user = db.users[username];
+    if (user && user.password === password) {
+        res.json({ status: true, balance: user.balance });
+    } else {
+        res.json({ status: false, msg: "Login Gagal" });
+    }
+});
+
+// Endpoint Terima OTP dari Termux
 app.post('/api/receive-otp', async (req, res) => {
     const { otp } = req.body;
-    await db.ref('server/latest_otp').set({ code: otp, timestamp: Date.now() });
+    const db = await getDb();
+    db.server.latest_otp = { code: otp, timestamp: Date.now() };
+    await saveDb(db);
     res.json({ status: true });
 });
 
-// [ENDPOINT 2] Ambil Saldo & Data User
-app.get('/api/user/:userId', async (req, res) => {
-    const snap = await db.ref(`users/${req.params.userId}`).get();
-    res.json(snap.val() || { balance: 0 });
-});
-
-// [ENDPOINT 3] Create QRIS (Top Up)
-app.post('/api/order', async (req, res) => {
-    const { userId, amount } = req.body;
-    const inv = "otp" + Date.now();
-    try {
-        const response = await axios.post("https://hokto.my.id/produksi/payment/?api=create_qris", 
-            { amount, partnerReferenceNo: inv }, 
-            { headers: { 'X-API-KEY': HOKTO_KEY } }
-        );
-        await db.ref(`transactions/${inv}`).set({ userId, amount, status: 'PENDING' });
-        res.json({ status: true, inv, qr: response.data });
-    } catch (e) { res.json({ status: false }); }
-});
-
-// [ENDPOINT 4] Ambil OTP (Bayar Rp 10)
+// Endpoint Ambil OTP (Potong Saldo 10)
 app.get('/api/get-otp', async (req, res) => {
     const { userId } = req.query;
-    const [userSnap, otpSnap] = await Promise.all([
-        db.ref(`users/${userId}`).get(),
-        db.ref('server/latest_otp').get()
-    ]);
+    const db = await getDb();
+    const user = db.users[userId];
 
-    const balance = userSnap.val()?.balance || 0;
-    if (balance < 10) return res.json({ status: false, msg: "Saldo Kurang" });
+    if (!user || user.balance < 10) return res.json({ status: false, msg: "Saldo Kurang" });
 
-    if (otpSnap.exists() && (Date.now() - otpSnap.val().timestamp < 300000)) {
-        await db.ref(`users/${userId}`).update({ balance: balance - 10 });
-        res.json({ status: true, otp: otpSnap.val().code });
+    const otpData = db.server.latest_otp;
+    if (otpData.code && (Date.now() - otpData.timestamp < 300000)) {
+        user.balance -= 10;
+        await saveDb(db);
+        res.json({ status: true, otp: otpData.code, sisa: user.balance });
     } else {
-        res.json({ status: false, msg: "OTP Belum Masuk" });
+        res.json({ status: false, msg: "OTP Belum Tersedia" });
     }
 });
 
